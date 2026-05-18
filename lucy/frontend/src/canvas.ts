@@ -12,92 +12,108 @@ export type FrameProps = {
     zIndex: number
 }
 
-type FrameRecord = {
-    frameId: number
+type FrameEntry = {
     frameEl: HTMLDivElement
     root: ReactDOM.Root
-    isModal: boolean
     clickCatcher?: HTMLDivElement
 }
 
 let canvasEl: HTMLDivElement | null = null
-const frames: FrameRecord[] = []
+const frames = new Map<number, FrameEntry>()
 let nextFrameId = 1
-let highestZIndex = 10
+let highestZIndex = 0
 
-export function initCanvas(el: HTMLDivElement): void {
+function setCanvas(el: HTMLDivElement) {
     canvasEl = el
 }
 
-export function addFrame(
+function getTopZIndex(): number {
+    return highestZIndex
+}
+
+function addFrame(
     Component: React.ComponentType<FrameProps>,
-    partialProps: Partial<FrameProps> & { message?: any } = {}
-): number {
-    if (!canvasEl) throw new Error('Canvas not initialized')
+    partialProps: Partial<Omit<FrameProps, 'frameId' | 'zIndex'>>
+) {
+    if (!canvasEl) return
 
     const frameId = nextFrameId++
-    const width = partialProps.width ?? 800
-    const height = partialProps.height ?? 600
-    const isModal = partialProps.isModal ?? false
-    const message = partialProps.message ?? {}
+    highestZIndex++
 
-    let x: number
-    let y: number
+    let x = partialProps.x
+    let y = partialProps.y
 
-    if (isModal) {
-        x = 0
-        y = 0
-    } else if (partialProps.x !== undefined && partialProps.y !== undefined) {
-        x = partialProps.x
-        y = partialProps.y
-    } else if (frames.length > 0) {
-        const last = frames[frames.length - 1]
-        const lastOuter = last.frameEl.firstElementChild as HTMLDivElement | null
-        const lastX = lastOuter ? parseInt(lastOuter.style.left) || 100 : 100
-        const lastY = lastOuter ? parseInt(lastOuter.style.top) || 100 : 100
-        x = lastX + 50
-        y = lastY + 50
-    } else {
-        x = 100
-        y = 100
+    if (x === undefined || y === undefined) {
+        let nearestX = 50
+        let nearestY = 50
+        let nearestZ = -1
+        frames.forEach(entry => {
+            const outer = entry.frameEl.firstElementChild as HTMLElement | null
+            if (outer) {
+                const z = parseInt(outer.style.zIndex || '0', 10)
+                if (z > nearestZ) {
+                    nearestZ = z
+                    nearestX = parseInt(outer.style.left || '0', 10)
+                    nearestY = parseInt(outer.style.top || '0', 10)
+                }
+            }
+        })
+        x = x ?? nearestX + (frames.size > 0 ? 50 : 0)
+        y = y ?? nearestY + (frames.size > 0 ? 50 : 0)
     }
+
+    const isModal = partialProps.isModal ?? false
+    let frameZIndex = highestZIndex
 
     let clickCatcher: HTMLDivElement | undefined
-
     if (isModal) {
-        const zForCatcher = ++highestZIndex
         clickCatcher = document.createElement('div')
-        clickCatcher.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:${zForCatcher};`
+        Object.assign(clickCatcher.style, {
+            position: 'absolute',
+            top: '0', left: '0', right: '0', bottom: '0',
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: String(frameZIndex),
+        })
         canvasEl.appendChild(clickCatcher)
+        highestZIndex++
+        frameZIndex = highestZIndex
     }
 
-    const zIndex = ++highestZIndex
+    const props: FrameProps = {
+        frameId,
+        height: partialProps.height ?? 600,
+        isModal,
+        message: partialProps.message ?? {},
+        width: partialProps.width ?? 800,
+        x,
+        y,
+        zIndex: frameZIndex,
+    }
+
     const frameEl = document.createElement('div')
     canvasEl.appendChild(frameEl)
 
     const root = ReactDOM.createRoot(frameEl)
-    const props: FrameProps = { frameId, height, isModal, message, width, x, y, zIndex }
     root.render(React.createElement(Component, props))
 
-    frames.push({ frameId, frameEl, root, isModal, clickCatcher })
-    return frameId
+    frames.set(frameId, { frameEl, root, clickCatcher })
 }
 
-export function removeFrame(frameId: number): void {
-    const idx = frames.findIndex(f => f.frameId === frameId)
-    if (idx === -1) return
-
-    const record = frames[idx]
-    record.root.unmount()
-    record.frameEl.remove()
-    if (record.clickCatcher) record.clickCatcher.remove()
-    frames.splice(idx, 1)
+function removeFrame(frameId: number) {
+    const entry = frames.get(frameId)
+    if (!entry) return
+    entry.root.unmount()
+    entry.frameEl.remove()
+    entry.clickCatcher?.remove()
+    frames.delete(frameId)
 }
 
-export function bringToFront(frameId: number): void {
-    const record = frames.find(f => f.frameId === frameId)
-    if (!record) return
-    const z = ++highestZIndex
-    const outer = record.frameEl.firstElementChild as HTMLDivElement | null
-    if (outer) outer.style.zIndex = String(z)
+function bringToFront(frameId: number) {
+    const entry = frames.get(frameId)
+    if (!entry) return
+    highestZIndex++
+    const outer = entry.frameEl.firstElementChild as HTMLElement | null
+    if (outer) outer.style.zIndex = String(highestZIndex)
 }
+
+export const canvas = { setCanvas, addFrame, removeFrame, bringToFront, getTopZIndex }

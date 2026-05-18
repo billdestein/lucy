@@ -4,7 +4,7 @@ import { refresh } from './cache'
 export function stripForBackend(workbook: WorkbookType): WorkbookType {
     return {
         ...workbook,
-        pics: workbook.pics.map(p => ({ ...p, encodedImage: '' })),
+        pics: workbook.pics.map(pic => ({ ...pic, encodedImage: '' })),
     }
 }
 

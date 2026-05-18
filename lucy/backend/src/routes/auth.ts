@@ -1,52 +1,49 @@
 import { Router, Request, Response } from 'express'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
-import { randomUUID } from 'crypto'
-import fs from 'fs'
-import path from 'path'
+import { v4 as uuidv4 } from 'uuid'
 import { config } from '../config'
-import { redisClient } from '../services/redis'
+import { setSession } from '../services/redis'
 import { findOrCreateUser } from '../services/users'
 
 const router = Router()
 
-const jwksUrl = `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}/.well-known/jwks.json`
-const JWKS = createRemoteJWKSet(new URL(jwksUrl))
+const jwksUrl = new URL(
+    `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}/.well-known/jwks.json`
+)
+const JWKS = createRemoteJWKSet(jwksUrl)
 
-router.post('/login', async (req: Request, res: Response): Promise<void> => {
+router.post('/login', async (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+        res.status(401).json({ error: 'Missing authorization header' })
+        return
+    }
+
+    const idToken = authHeader.slice(7)
+
     try {
-        const authHeader = req.headers['authorization'] ?? ''
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
-
-        if (!token) {
-            res.status(401).json({ error: 'Missing authorization token' })
-            return
-        }
-
-        const { payload } = await jwtVerify(token, JWKS)
-        const email = payload['email'] as string
+        const { payload } = await jwtVerify(idToken, JWKS)
+        const email = payload.email as string
         if (!email) {
-            res.status(401).json({ error: 'Token missing email claim' })
+            res.status(401).json({ error: 'No email in token' })
             return
         }
 
-        const sessionId = randomUUID()
-        await redisClient.set(sessionId, email, { EX: 3600 })
+        findOrCreateUser(email)
+
+        const sessionId = uuidv4()
+        await setSession(sessionId, email)
 
         res.cookie('sessionId', sessionId, {
             httpOnly: true,
-            maxAge: 3600 * 1000,
             sameSite: 'lax',
+            maxAge: 3600 * 1000,
         })
 
-        const user = findOrCreateUser(email)
-
-        const workbooksDir = path.join(config.mountDir, 'users', user.slug, 'workbooks')
-        fs.mkdirSync(workbooksDir, { recursive: true })
-
-        res.status(200).end()
-    } catch (err: any) {
+        res.status(200).json({})
+    } catch (err) {
         console.error('Login error:', err)
-        res.status(401).json({ error: err.message ?? 'Authentication failed' })
+        res.status(401).json({ error: 'Invalid token' })
     }
 })
 

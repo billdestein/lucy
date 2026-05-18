@@ -1,4 +1,3 @@
-import React from 'react'
 import { BsArrowLeftShort } from 'react-icons/bs'
 import { BsChevronLeft } from 'react-icons/bs'
 import { BsChevronRight } from 'react-icons/bs'
@@ -10,13 +9,13 @@ import { BsPlusLg } from 'react-icons/bs'
 import { BsTrash } from 'react-icons/bs'
 import { BsUpload } from 'react-icons/bs'
 import { BsX } from 'react-icons/bs'
-import { BsSkipBackwardFill } from 'react-icons/bs'
-import { BsSkipForwardFill } from 'react-icons/bs'
 import { FaArrowCircleLeft } from 'react-icons/fa'
 import { FaArrowCircleRight } from 'react-icons/fa'
 import { FaRegCopy } from 'react-icons/fa6'
 import { FaRegSave } from 'react-icons/fa'
 import { FaSave } from 'react-icons/fa'
+import { BsSkipBackwardFill } from 'react-icons/bs'
+import { BsSkipForwardFill } from 'react-icons/bs'
 
 const size = 18
 

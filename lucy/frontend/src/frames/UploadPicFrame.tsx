@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react'
 import Frame from '../Frame'
-import { FrameProps, removeFrame } from '../canvas'
+import { FrameProps, canvas } from '../canvas'
 import { WorkbookType } from '@billdestein/joy-common'
+import { ButtonIcons } from '../ButtonIcons'
 
 type Message = {
     workbookName: string
@@ -9,18 +10,18 @@ type Message = {
 }
 
 export default function UploadPicFrame(props: FrameProps) {
-    const { frameId, message } = props
-    const msg = message as Message
-    const [status, setStatus] = useState<'idle' | 'uploading' | 'error'>('idle')
-    const [errorMsg, setErrorMsg] = useState('')
-    const inputRef = useRef<HTMLInputElement>(null)
+    const { workbookName, onUploaded } = props.message as Message
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const [uploading, setUploading] = useState(false)
+    const [error, setError] = useState('')
 
     async function uploadFile(file: File) {
-        setStatus('uploading')
+        setUploading(true)
+        setError('')
         try {
             const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader()
-                reader.onload = e => resolve(e.target!.result as string)
+                reader.onload = () => resolve(reader.result as string)
                 reader.onerror = reject
                 reader.readAsDataURL(file)
             })
@@ -29,40 +30,42 @@ export default function UploadPicFrame(props: FrameProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ workbookName: msg.workbookName, imageFilename: file.name, imageData, mimeType: file.type }),
+                body: JSON.stringify({ workbookName, imageFilename: file.name, imageData, mimeType: file.type }),
             })
             if (!res.ok) throw new Error((await res.json()).error)
             const data = await res.json()
-            msg.onUploaded(data.workbook)
-            removeFrame(frameId)
-        } catch (err: any) {
-            setStatus('error')
-            setErrorMsg(err.message)
+            onUploaded(data.workbook)
+            canvas.removeFrame(props.frameId)
+        } catch (err) {
+            setError(String(err))
+        } finally {
+            setUploading(false)
         }
     }
 
-    async function uploadFromUrl(imageUrl: string) {
-        setStatus('uploading')
+    async function uploadFromUrl(url: string) {
+        setUploading(true)
+        setError('')
         try {
-            const url = new URL(imageUrl)
-            const imageFilename = url.pathname.split('/').pop()?.split('?')[0] ?? 'image.jpg'
+            const lastSegment = url.split('/').pop()?.split('?')[0] ?? 'image'
             const res = await fetch('/v1/workbooks/upload-pic-from-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ workbookName: msg.workbookName, imageUrl, imageFilename }),
+                body: JSON.stringify({ workbookName, imageUrl: url, imageFilename: lastSegment }),
             })
             if (!res.ok) throw new Error((await res.json()).error)
             const data = await res.json()
-            msg.onUploaded(data.workbook)
-            removeFrame(frameId)
-        } catch (err: any) {
-            setStatus('error')
-            setErrorMsg(err.message)
+            onUploaded(data.workbook)
+            canvas.removeFrame(props.frameId)
+        } catch (err) {
+            setError(String(err))
+        } finally {
+            setUploading(false)
         }
     }
 
-    function handleDrop(e: React.DragEvent) {
+    function onDrop(e: React.DragEvent) {
         e.preventDefault()
         if (e.dataTransfer.files.length > 0) {
             uploadFile(e.dataTransfer.files[0])
@@ -73,54 +76,59 @@ export default function UploadPicFrame(props: FrameProps) {
     }
 
     return (
-        <Frame {...props} title="Upload Image" isModal={true}>
+        <Frame {...props} title="Upload Image" width={420} height={220}>
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div
-                    onDrop={handleDrop}
-                    onDragOver={e => e.preventDefault()}
-                    onClick={() => inputRef.current?.click()}
                     style={{
                         flex: 1,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: '2px dashed #555',
-                        margin: 12,
-                        borderRadius: 6,
+                        border: '2px dashed #444',
+                        margin: 10,
+                        borderRadius: 4,
                         color: '#888',
                         fontSize: 13,
-                        gap: 8,
+                        cursor: 'default',
                     }}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={onDrop}
                 >
-                    {status === 'uploading' ? (
-                        <span>Uploading…</span>
-                    ) : status === 'error' ? (
-                        <span style={{ color: '#f48771' }}>{errorMsg}</span>
-                    ) : (
+                    {uploading ? 'Uploading…' : (
                         <>
-                            <span style={{ fontSize: 32 }}>↑</span>
+                            <span style={{ fontSize: 24, marginBottom: 8 }}>{ButtonIcons.upload}</span>
                             <span>Drop an image or URL here</span>
                         </>
                     )}
+                    {error && <div style={{ color: '#f88', marginTop: 8 }}>{error}</div>}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 12px 12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 10px 10px' }}>
                     <button
-                        onClick={() => inputRef.current?.click()}
-                        style={{ background: '#0078d4', border: 'none', color: '#fff', padding: '5px 14px', borderRadius: 3, cursor: 'pointer', fontSize: 13 }}
+                        onClick={() => fileInputRef.current?.click()}
+                        style={btnStyle}
                     >
                         Browse
                     </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={e => { if (e.target.files?.[0]) uploadFile(e.target.files[0]) }}
+                    />
                 </div>
-                <input
-                    ref={inputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f) }}
-                />
             </div>
         </Frame>
     )
+}
+
+const btnStyle: React.CSSProperties = {
+    background: '#3c3c3c',
+    border: 'none',
+    color: '#ccc',
+    padding: '4px 14px',
+    borderRadius: 3,
+    cursor: 'pointer',
+    fontSize: 13,
 }

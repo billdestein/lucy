@@ -1,22 +1,15 @@
 import os from 'os'
 
-function required(name: string): string {
-    const val = process.env[name]
-    if (!val) throw new Error(`Missing required env var: ${name}`)
-    return val
-}
-
 function expandTilde(p: string): string {
-    if (p.startsWith('~')) return os.homedir() + p.slice(1)
-    return p
+    return p.startsWith('~') ? os.homedir() + p.slice(1) : p
 }
 
 export const config = {
-    cognitoRegion: required('COGNITO_REGION'),
-    cognitoUserPoolId: required('COGNITO_USER_POOL_ID'),
-    googleApiKey: required('GOOGLE_API_KEY'),
-    mountDir: expandTilde(required('MOUNT_DIR')),
-    origin: required('ORIGIN'),
-    redisHost: required('REDIS_HOST'),
-    redisPort: parseInt(required('REDIS_PORT'), 10),
+    cognitoRegion: process.env.COGNITO_REGION!,
+    cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID!,
+    googleApiKey: process.env.GOOGLE_API_KEY!,
+    mountDir: expandTilde(process.env.MOUNT_DIR!),
+    origin: process.env.ORIGIN!,
+    redisHost: process.env.REDIS_HOST!,
+    redisPort: parseInt(process.env.REDIS_PORT!, 10),
 }

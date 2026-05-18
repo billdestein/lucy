@@ -1,187 +1,168 @@
-import React, { useRef, useEffect } from 'react'
-import { FrameProps, bringToFront } from './canvas'
+import React, { useRef, useEffect, ReactNode } from 'react'
+import { FrameProps, canvas } from './canvas'
 
-const HEADER_HEIGHT = 32
 const BORDER = 5
+const HEADER_H = 30
 const RESIZE_ZONE = 10
-const MIN_SIZE = 100
 
 type Props = FrameProps & {
     title: string
-    headerButtons?: React.ReactNode
-    children: React.ReactNode
+    headerButtons?: ReactNode
+    children: ReactNode
 }
 
-type ResizeEdge = { top: boolean; bottom: boolean; left: boolean; right: boolean }
-
-function getResizeEdge(e: MouseEvent, el: HTMLDivElement): ResizeEdge | null {
-    const rect = el.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const w = rect.width
-    const h = rect.height
-
-    const nearLeft = x <= RESIZE_ZONE
-    const nearRight = x >= w - RESIZE_ZONE
-    const nearTop = y <= RESIZE_ZONE
-    const nearBottom = y >= h - RESIZE_ZONE
-
-    if (nearLeft || nearRight || nearTop || nearBottom) {
-        return { top: nearTop, bottom: nearBottom, left: nearLeft, right: nearRight }
-    }
-    return null
-}
-
-function edgeToCursor(edge: ResizeEdge | null): string {
-    if (!edge) return ''
-    const { top, bottom, left, right } = edge
-    if ((top && left) || (bottom && right)) return 'nwse-resize'
-    if ((top && right) || (bottom && left)) return 'nesw-resize'
-    if (top || bottom) return 'ns-resize'
-    if (left || right) return 'ew-resize'
-    return ''
-}
-
-export default function Frame({ frameId, width, height, x, y, zIndex, isModal, title, headerButtons, children }: Props) {
+export default function Frame({ frameId, height, isModal, width, x, y, zIndex, title, headerButtons, children }: Props) {
     const outerRef = useRef<HTMLDivElement>(null)
-    const resizingRef = useRef(false)
+    const drag = useRef({ active: false, startMouseX: 0, startMouseY: 0, startLeft: 0, startTop: 0 })
+    const resize = useRef({ active: false, startMouseX: 0, startMouseY: 0, startW: 0, startH: 0 })
 
     useEffect(() => {
-        const el = outerRef.current
-        if (!el) return
+        const outer = outerRef.current
+        if (!outer) return
 
-        let fx = isModal ? (window.innerWidth - width) / 2 : x
-        let fy = isModal ? (window.innerHeight - height) / 2 : y
+        const totalW = width + BORDER * 2
+        const totalH = height + HEADER_H + BORDER * 2
 
-        el.style.left = fx + 'px'
-        el.style.top = fy + 'px'
-        el.style.width = width + 'px'
-        el.style.height = height + 'px'
-        el.style.zIndex = String(zIndex)
+        if (isModal) {
+            const canvas = outer.closest('[style*="position: relative"], [style*="position:relative"]') as HTMLElement | null
+            const cw = canvas?.clientWidth ?? window.innerWidth
+            const ch = canvas?.clientHeight ?? window.innerHeight
+            outer.style.left = `${Math.max(0, (cw - totalW) / 2)}px`
+            outer.style.top = `${Math.max(0, (ch - totalH) / 2)}px`
+        } else {
+            outer.style.left = `${x}px`
+            outer.style.top = `${y}px`
+        }
+        outer.style.width = `${totalW}px`
+        outer.style.height = `${totalH}px`
+        outer.style.zIndex = String(zIndex)
     }, [])
 
-    function handleHeaderMouseDown(e: React.MouseEvent) {
-        if (e.button !== 0) return
-        e.preventDefault()
-        e.stopPropagation()
-        const el = outerRef.current!
-        const startMx = e.clientX
-        const startMy = e.clientY
-        const startFx = parseInt(el.style.left)
-        const startFy = parseInt(el.style.top)
-
-        function onMove(ev: MouseEvent) {
-            const canvas = el.parentElement?.parentElement
-            const canvasW = canvas?.clientWidth ?? window.innerWidth
-            const canvasH = canvas?.clientHeight ?? window.innerHeight
-            const fw = el.offsetWidth
-            let nx = startFx + (ev.clientX - startMx)
-            let ny = startFy + (ev.clientY - startMy)
-
-            if (ny < 0) ny = 0
-            if (ny > canvasH - HEADER_HEIGHT - BORDER * 2) ny = canvasH - HEADER_HEIGHT - BORDER * 2
-            if (nx + fw < 30) nx = 30 - fw
-            if (nx > canvasW - 30) nx = canvasW - 30
-
-            el.style.left = nx + 'px'
-            el.style.top = ny + 'px'
-        }
-
-        function onUp() {
-            document.removeEventListener('mousemove', onMove)
-            document.removeEventListener('mouseup', onUp)
-        }
-
-        document.addEventListener('mousemove', onMove)
-        document.addEventListener('mouseup', onUp)
+    function getCanvas(): HTMLElement | null {
+        return outerRef.current?.parentElement?.parentElement ?? null
     }
 
-    function handleOuterMouseMove(e: React.MouseEvent) {
-        if (resizingRef.current) return
-        const el = outerRef.current!
-        const edge = getResizeEdge(e.nativeEvent, el)
-        el.style.cursor = edgeToCursor(edge) || 'default'
+    function onHeaderMouseDown(e: React.MouseEvent) {
+        if (isModal) return
+        e.preventDefault()
+        canvas.bringToFront(frameId)
+        const outer = outerRef.current!
+        drag.current = {
+            active: true,
+            startMouseX: e.clientX,
+            startMouseY: e.clientY,
+            startLeft: outer.offsetLeft,
+            startTop: outer.offsetTop,
+        }
+
+        function onMouseMove(e: MouseEvent) {
+            if (!drag.current.active) return
+            const cv = getCanvas()
+            const cvW = cv?.clientWidth ?? window.innerWidth
+            const cvH = cv?.clientHeight ?? window.innerHeight
+            const outer = outerRef.current!
+            const ow = outer.offsetWidth
+            const oh = outer.offsetHeight
+
+            let newLeft = drag.current.startLeft + (e.clientX - drag.current.startMouseX)
+            let newTop = drag.current.startTop + (e.clientY - drag.current.startMouseY)
+
+            newLeft = Math.max(30 - ow, Math.min(cvW - 30, newLeft))
+            newTop = Math.max(0, Math.min(cvH - HEADER_H - BORDER * 2, newTop))
+
+            outer.style.left = `${newLeft}px`
+            outer.style.top = `${newTop}px`
+        }
+
+        function onMouseUp() {
+            drag.current.active = false
+            window.removeEventListener('mousemove', onMouseMove)
+            window.removeEventListener('mouseup', onMouseUp)
+        }
+
+        window.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', onMouseUp)
     }
 
-    function handleOuterMouseDown(e: React.MouseEvent) {
-        bringToFront(frameId)
-        if (e.button !== 0) return
-        const el = outerRef.current!
-        const edgeOrNull = getResizeEdge(e.nativeEvent, el)
-        if (!edgeOrNull) return
-        const edge = edgeOrNull
+    function onBorderMouseDown(e: React.MouseEvent) {
+        const outer = outerRef.current!
+        const rect = outer.getBoundingClientRect()
+        const rx = e.clientX - rect.left
+        const ry = e.clientY - rect.top
+        const ow = outer.offsetWidth
+        const oh = outer.offsetHeight
+
+        const nearRight = rx >= ow - RESIZE_ZONE
+        const nearBottom = ry >= oh - RESIZE_ZONE
+        if (!nearRight && !nearBottom) return
+
         e.preventDefault()
-        e.stopPropagation()
-
-        resizingRef.current = true
-        const startMx = e.clientX
-        const startMy = e.clientY
-        const startFx = parseInt(el.style.left)
-        const startFy = parseInt(el.style.top)
-        const startFw = el.offsetWidth
-        const startFh = el.offsetHeight
-
-        function onMove(ev: MouseEvent) {
-            const dx = ev.clientX - startMx
-            const dy = ev.clientY - startMy
-            let nx = startFx, ny = startFy, nw = startFw, nh = startFh
-
-            if (edge.right) nw = Math.max(MIN_SIZE, startFw + dx)
-            if (edge.bottom) nh = Math.max(MIN_SIZE, startFh + dy)
-            if (edge.left) { nw = Math.max(MIN_SIZE, startFw - dx); nx = startFx + startFw - nw }
-            if (edge.top) { nh = Math.max(MIN_SIZE, startFh - dy); ny = startFy + startFh - nh }
-
-            el.style.left = nx + 'px'
-            el.style.top = ny + 'px'
-            el.style.width = nw + 'px'
-            el.style.height = nh + 'px'
+        canvas.bringToFront(frameId)
+        resize.current = {
+            active: true,
+            startMouseX: e.clientX,
+            startMouseY: e.clientY,
+            startW: ow,
+            startH: oh,
         }
 
-        function onUp() {
-            resizingRef.current = false
-            el.style.cursor = 'default'
-            document.removeEventListener('mousemove', onMove)
-            document.removeEventListener('mouseup', onUp)
+        function onMouseMove(e: MouseEvent) {
+            if (!resize.current.active) return
+            const outer = outerRef.current!
+            const dx = e.clientX - resize.current.startMouseX
+            const dy = e.clientY - resize.current.startMouseY
+
+            if (nearRight) outer.style.width = `${Math.max(200, resize.current.startW + dx)}px`
+            if (nearBottom) outer.style.height = `${Math.max(150, resize.current.startH + dy)}px`
         }
 
-        document.addEventListener('mousemove', onMove)
-        document.addEventListener('mouseup', onUp)
+        function onMouseUp() {
+            resize.current.active = false
+            window.removeEventListener('mousemove', onMouseMove)
+            window.removeEventListener('mouseup', onMouseUp)
+        }
+
+        window.addEventListener('mousemove', onMouseMove)
+        window.addEventListener('mouseup', onMouseUp)
     }
 
     return (
         <div
             ref={outerRef}
-            onMouseMove={handleOuterMouseMove}
-            onMouseDown={handleOuterMouseDown}
             style={{
                 position: 'absolute',
-                border: `${BORDER}px solid #555`,
                 boxSizing: 'border-box',
+                border: `${BORDER}px solid #555`,
+                background: '#1e1e1e',
                 display: 'flex',
                 flexDirection: 'column',
-                background: '#1e1e1e',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+                cursor: 'default',
+            }}
+            onMouseDown={e => {
+                canvas.bringToFront(frameId)
+                onBorderMouseDown(e)
             }}
         >
             <div
-                onMouseDown={handleHeaderMouseDown}
                 style={{
-                    height: HEADER_HEIGHT,
+                    height: HEADER_H,
                     background: '#2d2d2d',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 8px',
-                    cursor: 'grab',
-                    userSelect: 'none',
+                    padding: '0 6px',
                     flexShrink: 0,
-                    borderBottom: '1px solid #444',
+                    cursor: isModal ? 'default' : 'grab',
+                    userSelect: 'none',
                 }}
+                onMouseDown={onHeaderMouseDown}
             >
                 <span style={{ color: '#ccc', fontSize: 13 }}>{title}</span>
-                <div style={{ display: 'flex', gap: 4 }}>{headerButtons}</div>
+                <div style={{ display: 'flex', gap: 2 }} onMouseDown={e => e.stopPropagation()}>
+                    {headerButtons}
+                </div>
             </div>
-            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {children}
             </div>
         </div>

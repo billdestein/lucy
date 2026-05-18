@@ -1,17 +1,16 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-CONFIG_FILE="$HOME/lucy-config/FrontendLocalConfig.json"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-  echo "Config file not found: $CONFIG_FILE"
-  exit 1
+if [[ "$(uname)" == "Darwin" ]]; then
+    CONFIG_FILE="$HOME/lucy-config/FrontendLocalConfig.json"
+else
+    CONFIG_FILE="/mount/lucy-config/FrontendProdConfig.json"
 fi
 
-export VITE_COGNITO_AUTHORITY="$(jq -r '.COGNITO_AUTHORITY' "$CONFIG_FILE")"
-export VITE_COGNITO_CLIENT_ID="$(jq -r '.COGNITO_CLIENT_ID' "$CONFIG_FILE")"
+export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$CONFIG_FILE")
+export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$CONFIG_FILE")
 
 cd "$SCRIPT_DIR"
-npm run dev
+npx vite

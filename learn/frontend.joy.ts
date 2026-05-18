@@ -10,9 +10,12 @@ In dev mode mode, the frontend listens on port 5173.
 Frontend uses Cognito for authentication and authorization, so frontend needs
 to know COGNITO_AUTHORITY and COGNITO_CLIENT_ID.
 
-Frontend includes a startup script named start.sh.  The startup script reads the file
-~/lucy-config/FrontendLocalConfig.json.  That file contains an object with these 
-properties:
+
+Frontend includes a startup script named start.sh.
+The startup checks where it is running.
+If running on MacOS, it reads the file ~/lucy-config/FrontendLocalConfig.json.
+If running on Linux,  it reads the file /mount/lucy-config/FrontendProdConfig.json.
+That file contains an object with these properties:
 
 - COGNITO_AUTHORITY
 - COGNITO_CLIENT_ID

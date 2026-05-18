@@ -5,21 +5,17 @@ import ComposerButtonRowComponent from './ComposerButtonRowComponent'
 
 export default function ComposerComponent() {
     const { workbook } = useWorkbook()
-    const [editorText, setEditorText] = useState('')
+    const focusedPrompt = workbook.prompts.find(p => p.focused)
+    const [editorText, setEditorText] = useState(focusedPrompt?.text ?? '')
 
     useEffect(() => {
-        const focused = workbook.prompts.find(p => p.focused)
-        setEditorText(focused?.text ?? '')
-    }, [workbook.prompts])
+        setEditorText(focusedPrompt?.text ?? '')
+    }, [focusedPrompt?.createdAt])
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-                <ComposerEditorComponent value={editorText} onChange={setEditorText} />
-            </div>
-            <div style={{ flexShrink: 0 }}>
-                <ComposerButtonRowComponent editorText={editorText} />
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#1e1e1e' }}>
+            <ComposerEditorComponent value={editorText} onChange={setEditorText} />
+            <ComposerButtonRowComponent editorText={editorText} />
         </div>
     )
 }

@@ -1,35 +1,41 @@
 import fs from 'fs'
 import path from 'path'
-import { UserType } from '@billdestein/joy-common'
-import { slugFromEmail, emailFromSlug } from '@billdestein/joy-common'
+import { UserType, slugFromEmail } from '@billdestein/joy-common'
 import { config } from '../config'
 
-const userMap = new Map<string, UserType>()
+const usersByEmail = new Map<string, UserType>()
 
-function usersDir(): string {
-    return path.join(config.mountDir, 'users')
+const usersJsonPath = path.join(config.mountDir, 'users.json')
+
+function readUsersJson(): Record<string, string> {
+    if (!fs.existsSync(usersJsonPath)) return {}
+    return JSON.parse(fs.readFileSync(usersJsonPath, 'utf8'))
 }
 
-function findSlugOnDisk(email: string): string | null {
-    const dir = usersDir()
-    if (!fs.existsSync(dir)) return null
-    const entries = fs.readdirSync(dir, { withFileTypes: true })
-    for (const entry of entries) {
-        if (entry.isDirectory() && emailFromSlug(entry.name) === email) {
-            return entry.name
-        }
-    }
-    return null
+function writeUsersJson(map: Record<string, string>) {
+    fs.writeFileSync(usersJsonPath, JSON.stringify(map, null, 2))
 }
 
 export function findOrCreateUser(email: string): UserType {
-    const cached = userMap.get(email)
-    if (cached) return cached
+    if (usersByEmail.has(email)) {
+        return usersByEmail.get(email)!
+    }
 
-    const slug = findSlugOnDisk(email) ?? slugFromEmail(email)
+    const slugsMap = readUsersJson()
+    let slug = slugsMap[email]
+    if (!slug) {
+        slug = slugFromEmail(email)
+        slugsMap[email] = slug
+        writeUsersJson(slugsMap)
+    }
+
     const user: UserType = { email, slug }
-    userMap.set(email, user)
+    usersByEmail.set(email, user)
 
-    fs.mkdirSync(path.join(usersDir(), slug), { recursive: true })
+    const userDir = path.join(config.mountDir, 'users', slug)
+    if (!fs.existsSync(userDir)) {
+        fs.mkdirSync(userDir, { recursive: true })
+    }
+
     return user
 }

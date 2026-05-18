@@ -1,11 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { getStoredToken, handleCallback, callLoginEndpoint, signIn } from './auth'
-import { initCanvas, addFrame } from './canvas'
+import React, { useEffect, useState, useRef } from 'react'
+import { getIdToken, handleCallback, signIn } from './auth'
+import { canvas } from './canvas'
 import MainMenuComponent from './components/MainMenuComponent'
+import WorkbookListFrame from './frames/WorkbookListFrame'
+
+async function loginToBackend(idToken: string) {
+    try {
+        await fetch('/v1/auth/login', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${idToken}` },
+            credentials: 'include',
+        })
+    } catch (err) {
+        console.error('Backend login failed:', err)
+    }
+}
 
 export default function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false)
-    const [authLoading, setAuthLoading] = useState(true)
+    const [idToken, setIdToken] = useState<string | null>(null)
+    const [loading, setLoading] = useState(true)
     const canvasRef = useRef<HTMLDivElement>(null)
     const canvasInitialized = useRef(false)
 
@@ -13,60 +26,58 @@ export default function App() {
         async function init() {
             const params = new URLSearchParams(window.location.search)
             if (params.has('code')) {
-                try {
-                    const idToken = await handleCallback()
-                    await callLoginEndpoint(idToken)
-                    setIsLoggedIn(true)
-                } catch (err) {
-                    console.error('Auth callback error:', err)
-                }
-            } else {
-                const token = getStoredToken()
+                const token = await handleCallback()
                 if (token) {
-                    try {
-                        await callLoginEndpoint(token)
-                        setIsLoggedIn(true)
-                    } catch {
-                        setIsLoggedIn(false)
-                    }
+                    await loginToBackend(token)
+                    setIdToken(token)
                 }
+                setLoading(false)
+                return
             }
-            setAuthLoading(false)
+
+            const token = getIdToken()
+            if (token) {
+                await loginToBackend(token)
+                setIdToken(token)
+            }
+            setLoading(false)
         }
         init()
     }, [])
 
     useEffect(() => {
-        if (isLoggedIn && canvasRef.current && !canvasInitialized.current) {
+        if (idToken && canvasRef.current && !canvasInitialized.current) {
             canvasInitialized.current = true
-            initCanvas(canvasRef.current)
-            import('./frames/WorkbookListFrame').then(m => {
-                addFrame(m.default, { width: 700, height: 400 })
-            })
+            canvas.setCanvas(canvasRef.current)
+            canvas.addFrame(WorkbookListFrame, {})
         }
-    }, [isLoggedIn])
+    }, [idToken])
 
-    if (authLoading) {
-        return <div style={{ width: '100vw', height: '100vh', background: '#000' }} />
+    if (loading) {
+        return (
+            <div style={centerStyle}>
+                <span style={{ color: 'gold', fontSize: '2rem' }}>Lucy</span>
+            </div>
+        )
     }
 
-    if (!isLoggedIn) {
+    if (!idToken) {
         return (
-            <div style={{ width: '100vw', height: '100vh', background: '#000', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'gold', fontSize: 48, fontWeight: 'bold' }}>Lucy</span>
+            <div style={{ ...centerStyle, position: 'relative' }}>
+                <span style={{ color: 'gold', fontSize: '2rem' }}>Lucy</span>
                 <button
                     onClick={signIn}
                     style={{
                         position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        background: '#0078d4',
-                        border: 'none',
-                        color: '#fff',
-                        padding: '8px 16px',
-                        borderRadius: 4,
+                        top: '1rem',
+                        right: '1rem',
+                        padding: '0.5rem 1.2rem',
+                        background: 'transparent',
+                        color: 'gold',
+                        border: '1px solid gold',
                         cursor: 'pointer',
-                        fontSize: 14,
+                        fontSize: '0.9rem',
+                        borderRadius: 3,
                     }}
                 >
                     Sign In
@@ -76,13 +87,18 @@ export default function App() {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#1e1e1e' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100vw', height: '100vh', background: '#000', overflow: 'hidden' }}>
             <MainMenuComponent />
-            <div
-                ref={canvasRef}
-                className="lucy-canvas"
-                style={{ flex: 1, position: 'relative', overflow: 'hidden' }}
-            />
+            <div ref={canvasRef} style={{ flex: 1, position: 'relative', overflow: 'hidden' }} />
         </div>
     )
+}
+
+const centerStyle: React.CSSProperties = {
+    background: 'black',
+    width: '100vw',
+    height: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
 }

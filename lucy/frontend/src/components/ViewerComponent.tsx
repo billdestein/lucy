@@ -1,98 +1,111 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import { addFrame } from '../canvas'
-
-type ContextMenuState = { x: number; y: number } | null
+import { canvas } from '../canvas'
+import ZoomFrame from '../frames/ZoomFrame'
 
 export default function ViewerComponent() {
     const { workbook, isLoading, selectedPicFilename } = useWorkbook()
-    const [contextMenu, setContextMenu] = useState<ContextMenuState>(null)
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+    const containerRef = useRef<HTMLDivElement>(null)
 
-    const pic = workbook.pics.find(p => p.filename === selectedPicFilename)
-        ?? workbook.pics[workbook.pics.length - 1]
+    const pic =
+        workbook.pics.find(p => p.filename === selectedPicFilename) ??
+        workbook.pics[workbook.pics.length - 1]
 
-    const hasPic = pic && pic.mimeType !== '' && pic.encodedImage
+    const hasImage = pic && pic.mimeType !== '' && pic.encodedImage !== ''
+    const src = hasImage ? `data:${pic.mimeType};base64,${pic.encodedImage}` : null
 
-    useEffect(() => {
-        if (!contextMenu) return
-        function close() { setContextMenu(null) }
-        document.addEventListener('click', close)
-        return () => document.removeEventListener('click', close)
-    }, [contextMenu])
-
-    function handleContextMenu(e: React.MouseEvent) {
+    function onContextMenu(e: React.MouseEvent) {
+        if (!hasImage) return
         e.preventDefault()
-        if (!hasPic) return
         setContextMenu({ x: e.clientX, y: e.clientY })
     }
 
-    function download() {
-        if (!hasPic) return
+    function dismiss() {
+        setContextMenu(null)
+    }
+
+    function downloadImage() {
+        dismiss()
+        if (!src || !pic) return
         const a = document.createElement('a')
-        a.href = `data:${pic!.mimeType};base64,${pic!.encodedImage}`
-        a.download = pic!.filename
+        a.href = src
+        a.download = pic.filename
         a.click()
-        setContextMenu(null)
     }
 
-    function zoom() {
-        if (!hasPic) return
-        import('../frames/ZoomFrame').then(m => {
-            addFrame(m.default, {
-                message: { encodedImage: pic!.encodedImage, mimeType: pic!.mimeType },
-                width: 800,
-                height: 600,
-            })
-        })
-        setContextMenu(null)
+    function saveAsPic() {
+        dismiss()
+        alert('save')
     }
 
-    const menuItems = [
-        { label: 'Download image', action: download },
-        { label: 'Save as pic', action: () => { alert('save'); setContextMenu(null) } },
-        { label: 'Zoom', action: zoom },
-    ]
+    function zoomImage() {
+        dismiss()
+        if (!pic) return
+        canvas.addFrame(ZoomFrame, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
+    }
 
     return (
         <div
-            style={{ width: '100%', height: '100%', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-            onContextMenu={handleContextMenu}
+            ref={containerRef}
+            style={{
+                flex: 1,
+                background: '#000',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+            }}
+            onContextMenu={onContextMenu}
+            onClick={dismiss}
         >
             {isLoading && (
-                <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', zIndex: 10 }}>
-                    <style>{`@keyframes lucy-spin { to { transform: rotate(360deg) } }`}</style>
-                    <div style={{ width: 40, height: 40, border: '4px solid #555', borderTopColor: '#0078d4', borderRadius: '50%', animation: 'lucy-spin 0.8s linear infinite' }} />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 10 }}>
+                    <div style={{ width: 40, height: 40, border: '4px solid #555', borderTopColor: '#ccc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
             )}
-            {hasPic && (
+            {src ? (
                 <img
-                    src={`data:${pic!.mimeType};base64,${pic!.encodedImage}`}
-                    alt={pic!.filename}
+                    src={src}
+                    alt={pic?.filename}
                     style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    draggable={false}
                 />
+            ) : (
+                <div style={{ width: '100%', height: '100%', background: '#000' }} />
             )}
             {contextMenu && (
                 <div
-                    onClick={e => e.stopPropagation()}
                     style={{
                         position: 'fixed',
                         left: contextMenu.x,
                         top: contextMenu.y,
-                        background: '#252526',
+                        background: '#2d2d2d',
                         border: '1px solid #555',
                         borderRadius: 4,
                         zIndex: 99999,
-                        minWidth: 160,
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        minWidth: 140,
                     }}
+                    onClick={e => e.stopPropagation()}
                 >
-                    {menuItems.map(item => (
+                    {[
+                        { label: 'Download image', action: downloadImage },
+                        { label: 'Save as pic', action: saveAsPic },
+                        { label: 'Zoom', action: zoomImage },
+                    ].map(item => (
                         <div
                             key={item.label}
                             onClick={item.action}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#094771')}
+                            style={{
+                                padding: '7px 14px',
+                                color: '#ccc',
+                                fontSize: 13,
+                                cursor: 'pointer',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#3c3c3c')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                            style={{ padding: '7px 14px', color: '#ccc', cursor: 'pointer', fontSize: 13 }}
                         >
                             {item.label}
                         </div>

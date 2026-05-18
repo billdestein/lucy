@@ -3,7 +3,7 @@ import { useWorkbook } from '../WorkbookContext'
 import PicComponent from './PicComponent'
 
 export default function PicListComponent() {
-    const { workbook, selectedPicFilename, setSelectedPicFilename, setWorkbook } = useWorkbook()
+    const { workbook, setWorkbook, setSelectedPicFilename, selectedPicFilename } = useWorkbook()
 
     function handleClick(filename: string) {
         setSelectedPicFilename(filename)

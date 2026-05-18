@@ -8,7 +8,7 @@ type Props = {
 
 export default function ComposerEditorComponent({ value, onChange }: Props) {
     return (
-        <div style={{ width: '100%', height: '100%' }}>
+        <div style={{ flex: 1, overflow: 'hidden' }}>
             <Editor
                 height="100%"
                 theme="vs-dark"
@@ -20,7 +20,6 @@ export default function ComposerEditorComponent({ value, onChange }: Props) {
                     lineNumbers: 'off',
                     wordWrap: 'on',
                     fontSize: 13,
-                    readOnly: false,
                     scrollBeyondLastLine: false,
                 }}
             />

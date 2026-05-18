@@ -1,44 +1,32 @@
 import express from 'express'
-import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { config } from './config'
-import { initRedis } from './services/redis'
-import { sessionMiddleware } from './middleware/session'
+import { connectRedis } from './services/redis'
 import authRouter from './routes/auth'
 import healthRouter from './routes/health'
 import workbooksRouter from './routes/workbooks'
 
 const app = express()
 
-app.use(cors({
-    origin: config.origin,
-    credentials: true,
-    allowedHeaders: ['Authorization', 'Content-Type'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-}))
-
+app.use(cors({ origin: config.origin, credentials: true }))
 app.use(express.json({ limit: '20mb' }))
 app.use(cookieParser())
 
 app.use('/v1/auth', authRouter)
 app.use('/v1/health', healthRouter)
-app.use('/v1/workbooks', sessionMiddleware, workbooksRouter)
+app.use('/v1/workbooks', workbooksRouter)
 
 async function main() {
-    await initRedis()
-    console.log('Redis connected')
+    await connectRedis()
 
     fs.mkdirSync(path.join(config.mountDir, 'users'), { recursive: true })
-    console.log(`Mount dir ready: ${config.mountDir}`)
 
     app.listen(8080, () => {
         console.log('Backend listening on port 8080')
     })
 }
 
-main().catch((err) => {
-    console.error('Startup error:', err)
-    process.exit(1)
-})
+main().catch(console.error)

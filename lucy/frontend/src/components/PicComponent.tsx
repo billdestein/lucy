@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 type Props = {
     name: string
@@ -8,24 +8,33 @@ type Props = {
 }
 
 export default function PicComponent({ name, focused, sentinel, onClick }: Props) {
-    const [hover, setHover] = useState(false)
+    const [hovered, setHovered] = React.useState(false)
 
-    const bg = focused ? '#094771' : hover ? '#2a2d2e' : 'transparent'
+    const bg = focused
+        ? '#0e639c'
+        : hovered
+        ? '#2a2d2e'
+        : 'transparent'
+
+    const color = focused ? '#fff' : sentinel ? '#4ec9b0' : '#ccc'
 
     return (
         <div
             onClick={onClick}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
             style={{
-                padding: '4px 8px',
+                padding: '4px 10px',
                 cursor: 'pointer',
                 background: bg,
-                color: focused ? '#fff' : sentinel ? '#4ec9b0' : '#ccc',
-                fontStyle: sentinel ? 'italic' : 'normal',
+                color,
                 fontSize: 13,
+                fontStyle: sentinel ? 'italic' : 'normal',
+                borderBottom: sentinel ? '1px solid #444' : 'none',
                 userSelect: 'none',
-                borderBottom: sentinel ? '1px solid #444' : undefined,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
             }}
         >
             {name}

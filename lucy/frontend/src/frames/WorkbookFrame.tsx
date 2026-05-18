@@ -1,188 +1,156 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { WorkbookType } from '@billdestein/joy-common'
 import Frame from '../Frame'
-import { FrameProps, addFrame, removeFrame } from '../canvas'
-import { WorkbookContext } from '../WorkbookContext'
-import { stripForBackend, hydrateFromBackend } from '../workbookProtocol'
-import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent'
+import { FrameProps, canvas } from '../canvas'
+import { WorkbookProvider } from '../WorkbookContext'
+import { WorkbookType, PicType, PromptType } from '@billdestein/joy-common'
+import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
 import { ButtonIcons } from '../ButtonIcons'
+import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent'
 import PicListComponent from '../components/PicListComponent'
 import ViewerComponent from '../components/ViewerComponent'
 import ComposerComponent from '../components/ComposerComponent'
+import UploadPicFrame from './UploadPicFrame'
+import PromptFrame from './PromptFrame'
 
 type Message = { workbookName: string }
 
-function emptyWorkbook(workbookName: string): WorkbookType {
-    const now = Date.now()
-    return {
-        createdAt: now,
-        focusedPicFilename: 'empty',
-        pics: [{ createdAt: now, encodedImage: '', filename: 'empty', mimeType: '' }],
-        prompts: [{ createdAt: now, focused: true, text: '' }],
-        workbookName,
-    }
+function emptyWorkbook(name: string): WorkbookType {
+    const emptyPic: PicType = { createdAt: Date.now(), encodedImage: '', filename: 'empty', mimeType: '' }
+    const emptyPrompt: PromptType = { createdAt: Date.now(), focused: true, text: '' }
+    return { createdAt: Date.now(), focusedPicFilename: 'empty', pics: [emptyPic], prompts: [emptyPrompt], workbookName: name }
 }
 
 export default function WorkbookFrame(props: FrameProps) {
-    const { frameId, message } = props
-    const msg = message as Message
-
-    const [workbook, setWorkbook] = useState<WorkbookType>(() => emptyWorkbook(msg.workbookName))
+    const { workbookName } = props.message as Message
+    const [workbook, setWorkbook] = useState<WorkbookType>(emptyWorkbook(workbookName))
     const [isLoading, setIsLoading] = useState(false)
     const [selectedPicFilename, setSelectedPicFilename] = useState('empty')
     const [leftPct, setLeftPct] = useState(30)
     const [topPct, setTopPct] = useState(60)
-
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         async function load() {
-            try {
-                const res = await fetch(
-                    `/v1/workbooks/get-workbook?workbookName=${encodeURIComponent(msg.workbookName)}`,
-                    { credentials: 'include' }
-                )
-                const data = await res.json()
-                const hydrated = await hydrateFromBackend(data.workbook)
-                const withPrompts = hydrated.prompts.length === 0
-                    ? { ...hydrated, prompts: [{ createdAt: Date.now(), focused: true, text: '' }] }
-                    : hydrated
-                setWorkbook(withPrompts)
-                setSelectedPicFilename(withPrompts.focusedPicFilename ?? 'empty')
-            } catch (err) {
-                console.error('Failed to load workbook:', err)
+            const res = await fetch(`/v1/workbooks/get-workbook?workbookName=${encodeURIComponent(workbookName)}`, { credentials: 'include' })
+            if (!res.ok) return
+            const data = await res.json()
+            let wb: WorkbookType = data.workbook
+            if (!wb.prompts || wb.prompts.length === 0) {
+                wb = { ...wb, prompts: [{ createdAt: Date.now(), focused: true, text: '' }] }
             }
+            const hydrated = await hydrateFromBackend(wb)
+            setWorkbook(hydrated)
+            setSelectedPicFilename(hydrated.focusedPicFilename ?? 'empty')
         }
         load()
     }, [])
 
-    function startHDrag(e: React.MouseEvent) {
+    function onHorizDragStart(e: React.MouseEvent) {
         e.preventDefault()
+        const container = containerRef.current
+        if (!container) return
         const startX = e.clientX
         const startPct = leftPct
-        const totalW = containerRef.current?.offsetWidth ?? 1
+        const totalW = container.clientWidth
 
-        function onMove(ev: MouseEvent) {
-            const dx = ev.clientX - startX
-            setLeftPct(Math.max(10, Math.min(90, startPct + (dx / totalW) * 100)))
+        function onMove(e: MouseEvent) {
+            const dx = e.clientX - startX
+            const newPct = Math.max(10, Math.min(90, startPct + (dx / totalW) * 100))
+            setLeftPct(newPct)
         }
         function onUp() {
-            document.removeEventListener('mousemove', onMove)
-            document.removeEventListener('mouseup', onUp)
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
         }
-        document.addEventListener('mousemove', onMove)
-        document.addEventListener('mouseup', onUp)
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onUp)
     }
 
-    function startVDrag(e: React.MouseEvent) {
+    function onVertDragStart(e: React.MouseEvent) {
         e.preventDefault()
+        const container = containerRef.current
+        if (!container) return
         const startY = e.clientY
         const startPct = topPct
-        const totalH = containerRef.current?.offsetHeight ?? 1
+        const totalH = container.clientHeight
 
-        function onMove(ev: MouseEvent) {
-            const dy = ev.clientY - startY
-            setTopPct(Math.max(10, Math.min(90, startPct + (dy / totalH) * 100)))
+        function onMove(e: MouseEvent) {
+            const dy = e.clientY - startY
+            const newPct = Math.max(10, Math.min(90, startPct + (dy / totalH) * 100))
+            setTopPct(newPct)
         }
         function onUp() {
-            document.removeEventListener('mousemove', onMove)
-            document.removeEventListener('mouseup', onUp)
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
         }
-        document.addEventListener('mousemove', onMove)
-        document.addEventListener('mouseup', onUp)
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onUp)
+    }
+
+    function cloneHandler() {
+        canvas.addFrame(PromptFrame, {
+            isModal: true,
+            message: {
+                prompt: 'Enter a name for the cloned workbook:',
+                onOk: async (newWorkbookName: string) => {
+                    await fetch('/v1/workbooks/clone-workbook', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ workbook: stripForBackend(workbook), newWorkbookName }),
+                    })
+                },
+            },
+        })
+    }
+
+    function uploadHandler() {
+        canvas.addFrame(UploadPicFrame, {
+            isModal: true,
+            message: {
+                workbookName,
+                onUploaded: async (wb: WorkbookType) => {
+                    const hydrated = await hydrateFromBackend(wb)
+                    setWorkbook(hydrated)
+                    setSelectedPicFilename(hydrated.focusedPicFilename ?? 'empty')
+                },
+            },
+        })
     }
 
     const headerButtons = (
         <>
-            <FrameHeaderButtonComponent
-                icon={ButtonIcons.faRegCopy}
-                tooltipLabel="Clone Workbook"
-                handler={() => {
-                    import('./PromptFrame').then(m => {
-                        addFrame(m.default, {
-                            message: {
-                                prompt: 'Enter a name for the clone',
-                                onOk: async (newWorkbookName: string) => {
-                                    const res = await fetch('/v1/workbooks/clone-workbook', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        credentials: 'include',
-                                        body: JSON.stringify({ workbook: stripForBackend(workbook), newWorkbookName }),
-                                    })
-                                    if (!res.ok) {
-                                        const err = await res.json().catch(() => ({ error: res.statusText }))
-                                        alert(`Clone failed: ${err.error}`)
-                                        return
-                                    }
-                                    window.dispatchEvent(new CustomEvent('workbooks-changed'))
-                                    const wf = await import('./WorkbookFrame')
-                                    addFrame(wf.default, { message: { workbookName: newWorkbookName }, width: 1200, height: 800 })
-                                },
-                                onClose: () => {},
-                            },
-                            isModal: true,
-                            width: 400,
-                            height: 200,
-                        })
-                    })
-                }}
-            />
-            <FrameHeaderButtonComponent
-                icon={ButtonIcons.upload}
-                tooltipLabel="Upload Image"
-                handler={() => {
-                    import('./UploadPicFrame').then(m => {
-                        addFrame(m.default, {
-                            message: {
-                                workbookName: msg.workbookName,
-                                onUploaded: async (returned: WorkbookType) => {
-                                    const hydrated = await hydrateFromBackend(returned)
-                                    setWorkbook(hydrated)
-                                    setSelectedPicFilename(hydrated.focusedPicFilename ?? 'empty')
-                                },
-                            },
-                            isModal: true,
-                            width: 500,
-                            height: 300,
-                        })
-                    })
-                }}
-            />
-            <FrameHeaderButtonComponent
-                icon={ButtonIcons.x}
-                tooltipLabel="Close"
-                handler={() => removeFrame(frameId)}
-            />
+            <FrameHeaderButtonComponent icon={ButtonIcons.faRegCopy} handler={cloneHandler} tooltipLabel="Clone Workbook" />
+            <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={uploadHandler} tooltipLabel="Upload Image" />
+            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => canvas.removeFrame(props.frameId)} tooltipLabel="Close" />
         </>
     )
 
-    const ctx = { workbook, setWorkbook, isLoading, setIsLoading, selectedPicFilename, setSelectedPicFilename }
-
     return (
-        <WorkbookContext.Provider value={ctx}>
-            <Frame {...props} title={msg.workbookName} headerButtons={headerButtons}>
-                <div ref={containerRef} style={{ display: 'flex', width: '100%', height: '100%' }}>
-                    <div style={{ width: `${leftPct}%`, overflow: 'hidden' }}>
+        <WorkbookProvider value={{ workbook, setWorkbook, isLoading, setIsLoading, selectedPicFilename, setSelectedPicFilename }}>
+            <Frame {...props} title={workbookName} headerButtons={headerButtons}>
+                <div ref={containerRef} style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                    <div style={{ width: `${leftPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <PicListComponent />
                     </div>
                     <div
-                        onMouseDown={startHDrag}
-                        style={{ width: 5, background: '#444', cursor: 'ew-resize', flexShrink: 0 }}
+                        style={{ width: 5, background: '#3c3c3c', cursor: 'col-resize', flexShrink: 0 }}
+                        onMouseDown={onHorizDragStart}
                     />
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <div style={{ height: `${topPct}%`, overflow: 'hidden' }}>
+                        <div style={{ height: `${topPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <ViewerComponent />
                         </div>
                         <div
-                            onMouseDown={startVDrag}
-                            style={{ height: 5, background: '#444', cursor: 'ns-resize', flexShrink: 0 }}
+                            style={{ height: 5, background: '#3c3c3c', cursor: 'row-resize', flexShrink: 0 }}
+                            onMouseDown={onVertDragStart}
                         />
-                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <ComposerComponent />
                         </div>
                     </div>
                 </div>
             </Frame>
-        </WorkbookContext.Provider>
+        </WorkbookProvider>
     )
 }
