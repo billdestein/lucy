@@ -3,7 +3,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-CONFIG_FILE="$HOME/lucy-config/BackendLocalConfig.json"
+if [[ "$(uname)" == "Darwin" ]]; then
+  CONFIG_FILE="$HOME/lucy-config/BackendLocalConfig.json"
+else
+  CONFIG_FILE="$HOME/lucy-config/BackendProdConfig.json"
+fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
   echo "Config file not found: $CONFIG_FILE"

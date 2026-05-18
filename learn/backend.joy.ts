@@ -27,8 +27,9 @@ The startup script must capture its own directory as an absolute path before any
 Then use $SCRIPT_DIR for all subsequent path references. If you use $(dirname "$0") lazily
 after a cd, it resolves relative to the changed directory and points to the wrong place.
 
-When running in local mode, the startup script reads the file ~/lucy-config/BackendLocalConfig.json.
-When running in prod mode, the startup script reads the file ~/lucy-config/BackendProdConfig.json.
+The startup checks where it is running.
+If running on MacOS, it reads the file ~/lucy-config/BackendLocalConfig.json.
+If running on Linux,  it reads the file ~/lucy-config/BackendProdConfig.json.
 
 Both files contains a single json object with thse properties:
 
