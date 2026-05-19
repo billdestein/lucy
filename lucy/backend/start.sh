@@ -11,7 +11,7 @@ cd "$SCRIPT_DIR"
 if [[ "$(uname)" == "Darwin" ]]; then
     CONFIG_FILE="$HOME/lucy-config/BackendLocalConfig.json"
 else
-    CONFIG_FILE="$HOME/lucy-config/BackendProdConfig.json"
+    CONFIG_FILE="/mount/lucy-config/BackendProdConfig.json"
 fi
 
 export COGNITO_REGION=$(jq -r '.COGNITO_REGION' "$CONFIG_FILE")

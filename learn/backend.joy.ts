@@ -235,6 +235,8 @@ The Express JSON body size limit is set to 20mb to accommodate base64-encoded im
 
 The backend uses the standard redis client library -- not ioredis
 
+The Redis client must have tls: true in the socket config. ElastiCache Serverless requires TLS.
+
 The path for workbooks is: MOUNT_DIR/users/{slug}/workbooks/{workbookName}/
 
 MOUNT_DIR may begin with ~. Tilde is not expanded when bash assigns environment variables from
