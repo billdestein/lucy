@@ -245,4 +245,22 @@ before constructing any file path.
 
 At initialization, the backend server creates MOUNT_DIR/users if it does not exist.
 
+The backend also serves the frontend static files in production. After the API routes, the
+server adds express.static pointing at path.join(__dirname, '../../frontend/dist'). After
+that, a catch-all GET * route serves index.html from the same dist directory, so that
+client-side routing works when users load a URL directly.
+
+The start.sh builds the frontend before starting the server. Because Vite bakes environment
+variables into the JS bundle at build time, the start.sh must read the frontend config and
+export VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID before running the frontend build.
+The frontend config paths are the same as in frontend/start.sh: ~/lucy-config/FrontendLocalConfig.json
+on MacOS and /mount/lucy-config/FrontendProdConfig.json on Linux.
+
+After setting the VITE vars, it runs:
+
+    cd "$SCRIPT_DIR/../frontend"
+    npm run build
+
+Then cds back to SCRIPT_DIR before starting the server.
+
 `

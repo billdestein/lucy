@@ -6,13 +6,23 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../common"
 npm run build
 
+if [[ "$(uname)" == "Darwin" ]]; then
+    FRONTEND_CONFIG="$HOME/lucy-config/FrontendLocalConfig.json"
+    BACKEND_CONFIG="$HOME/lucy-config/BackendLocalConfig.json"
+else
+    FRONTEND_CONFIG="/mount/lucy-config/FrontendProdConfig.json"
+    BACKEND_CONFIG="/mount/lucy-config/BackendProdConfig.json"
+fi
+
+export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
+export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
+
+cd "$SCRIPT_DIR/../frontend"
+npm run build
+
 cd "$SCRIPT_DIR"
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    CONFIG_FILE="$HOME/lucy-config/BackendLocalConfig.json"
-else
-    CONFIG_FILE="/mount/lucy-config/BackendProdConfig.json"
-fi
+CONFIG_FILE="$BACKEND_CONFIG"
 
 export COGNITO_REGION=$(jq -r '.COGNITO_REGION' "$CONFIG_FILE")
 export COGNITO_USER_POOL_ID=$(jq -r '.COGNITO_USER_POOL_ID' "$CONFIG_FILE")

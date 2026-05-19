@@ -169,7 +169,7 @@ export default function WorkbookListFrame(props: FrameProps) {
             <div
                 ref={gridContainerRef}
                 className="ag-theme-alpine-dark"
-                style={{ flex: 1, width: '100%' }}
+                style={{ flex: 1, width: '100%', height: '100%' }}
                 onClick={() => setContextMenu(null)}
             >
                 <AgGridReact
@@ -177,7 +177,6 @@ export default function WorkbookListFrame(props: FrameProps) {
                     columnDefs={colDefs}
                     onGridReady={onGridReady}
                     onRowClicked={e => openWorkbook((e.data as RowData)._wb)}
-                    style={{ height: '100%', width: '100%' }}
                 />
             </div>
             {contextMenu && (

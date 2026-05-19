@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { Request, Response } from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import fs from 'fs'
@@ -18,6 +18,12 @@ app.use(cookieParser())
 app.use('/v1/auth', authRouter)
 app.use('/v1/health', healthRouter)
 app.use('/v1/workbooks', workbooksRouter)
+
+const distDir = path.join(__dirname, '../../frontend/dist')
+app.use(express.static(distDir))
+app.get('*', (_req: Request, res: Response) => {
+    res.sendFile(path.join(distDir, 'index.html'))
+})
 
 async function main() {
     await connectRedis()
