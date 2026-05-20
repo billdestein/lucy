@@ -13,9 +13,9 @@ It has two left-aligned buttons: "Demo" and "Workbooks"
 
 It has one right-aligned button: "Sign Out"
 
-The "Demo" button, when clicked, adds a DemoPanel to the canvas.
+The "Demo" button, when clicked, adds a DemoApplet to the canvas.
 
-The "Workbooks" button, When clicked, adds a WorkbookListPanel to the canvas.
+The "Workbooks" button, When clicked, adds a WorkbookListApplet to the canvas.
 
 The "Sign Out" button, When clicked, does a Cognito signout.
 `

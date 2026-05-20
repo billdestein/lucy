@@ -8,7 +8,7 @@ type Message = {
     onOk: (value: string) => void
 }
 
-export default function PromptPanel(props: FrameProps) {
+export default function PromptApplet(props: FrameProps) {
     const { frameId, prompt, onOk } = { ...props, ...(props.message as Message) }
     const [text, setText] = useState('')
     const [error, setError] = useState('')

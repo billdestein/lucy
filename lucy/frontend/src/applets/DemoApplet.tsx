@@ -4,7 +4,7 @@ import { FrameProps } from '@bill-destein/react-better-frames'
 
 const VIDEO_RATIO = 1112 / 625
 
-export default function DemoPanel(props: FrameProps) {
+export default function DemoApplet(props: FrameProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [dims, setDims] = useState({ width: 0, height: 0 })
 

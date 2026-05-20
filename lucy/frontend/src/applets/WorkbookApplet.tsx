@@ -9,8 +9,8 @@ import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent
 import PicListComponent from '../components/PicListComponent'
 import ViewerComponent from '../components/ViewerComponent'
 import ComposerComponent from '../components/ComposerComponent'
-import UploadPicPanel from './UploadPicPanel'
-import PromptPanel from './PromptPanel'
+import UploadPicApplet from './UploadPicApplet'
+import PromptApplet from './PromptApplet'
 
 function Slider({ orientation, onMouseDown }: { orientation: 'horizontal' | 'vertical'; onMouseDown: (e: React.MouseEvent) => void }) {
     const [hovered, setHovered] = React.useState(false)
@@ -41,7 +41,7 @@ function emptyWorkbook(name: string): WorkbookType {
     return { createdAt: Date.now(), focusedPicFilename: 'empty', pics: [emptyPic], prompts: [emptyPrompt], workbookName: name }
 }
 
-export default function WorkbookPanel(props: FrameProps) {
+export default function WorkbookApplet(props: FrameProps) {
     const { workbookName } = props.message as Message
     const [workbook, setWorkbook] = useState<WorkbookType>(emptyWorkbook(workbookName))
     const [isLoading, setIsLoading] = useState(false)
@@ -109,7 +109,7 @@ export default function WorkbookPanel(props: FrameProps) {
     }
 
     function cloneHandler() {
-        canvas.addFrame(PromptPanel, {
+        canvas.addFrame(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -126,7 +126,7 @@ export default function WorkbookPanel(props: FrameProps) {
     }
 
     function uploadHandler() {
-        canvas.addFrame(UploadPicPanel, {
+        canvas.addFrame(UploadPicApplet, {
             isModal: true,
             message: {
                 workbookName,

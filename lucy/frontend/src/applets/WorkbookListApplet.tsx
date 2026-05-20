@@ -9,9 +9,9 @@ import { WorkbookType } from '@billdestein/joy-common'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend } from '../workbookProtocol'
 import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent'
-import PromptPanel from './PromptPanel'
-import UploadWorkbookPanel from './UploadWorkbookPanel'
-import WorkbookPanel from './WorkbookPanel'
+import PromptApplet from './PromptApplet'
+import UploadWorkbookApplet from './UploadWorkbookApplet'
+import WorkbookApplet from './WorkbookApplet'
 
 type RowData = {
     name: string
@@ -42,7 +42,7 @@ function wbToRow(wb: WorkbookType): RowData {
     }
 }
 
-export default function WorkbookListPanel(props: FrameProps) {
+export default function WorkbookListApplet(props: FrameProps) {
     const [rowData, setRowData] = useState<RowData[]>([])
     const gridApiRef = useRef<GridApi | null>(null)
     const gridContainerRef = useRef<HTMLDivElement>(null)
@@ -93,11 +93,11 @@ export default function WorkbookListPanel(props: FrameProps) {
     }, [])
 
     function openWorkbook(wb: WorkbookType) {
-        canvas.addFrame(WorkbookPanel, { message: { workbookName: wb.workbookName } })
+        canvas.addFrame(WorkbookApplet, { message: { workbookName: wb.workbookName } })
     }
 
     function cloneWorkbook(wb: WorkbookType) {
-        canvas.addFrame(PromptPanel, {
+        canvas.addFrame(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -135,7 +135,7 @@ export default function WorkbookListPanel(props: FrameProps) {
     }
 
     function addWorkbook() {
-        canvas.addFrame(PromptPanel, {
+        canvas.addFrame(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for your new workbook:',
@@ -157,7 +157,7 @@ export default function WorkbookListPanel(props: FrameProps) {
             <FrameHeaderButtonComponent icon={ButtonIcons.plus} handler={addWorkbook} tooltipLabel="New Workbook" />
             <FrameHeaderButtonComponent
                 icon={ButtonIcons.upload}
-                handler={() => canvas.addFrame(UploadWorkbookPanel, { message: { onComplete: loadWorkbooks } })}
+                handler={() => canvas.addFrame(UploadWorkbookApplet, { message: { onComplete: loadWorkbooks } })}
                 tooltipLabel="Upload Workbook"
             />
             <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => canvas.removeFrame(props.frameId)} tooltipLabel="Close" />

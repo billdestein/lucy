@@ -15,16 +15,16 @@ import { frontend } from './learn/frontend.joy.ts'
 import { mainMenuComponent } from './learn/mainMenu.joy.ts'
 import { picComponent } from './learn/picComponent.joy.ts'
 import { picListComponent } from './learn/picListComponent.joy.ts'
-import { promptFrame } from './learn/promptFrame.joy.ts'
+import { promptApplet } from './learn/promptApplet.joy.ts'
 import { promptProtocol } from './learn/promptProtocol.joy.ts'
-import { uploadPicFrame } from './learn/uploadPicFrame.joy.ts'
-import { uploadWorkbookFrame } from './learn/uploadWorkbookFrame.joy.ts'
+import { uploadPicApplet } from './learn/uploadPicApplet.joy.ts'
+import { uploadWorkbookApplet } from './learn/uploadWorkbookApplet.joy.ts'
 import { viewerComponent } from './learn/viewerComponent.joy.ts'
 import { windows } from './learn/windows.joy.ts'
-import { workbookFrame } from './learn/workbookFrame.joy.ts'
+import { workbookApplet } from './learn/workbookApplet.joy.ts'
 import { workbookProtocol } from './learn/workbookProtocol.joy.ts'
-import { workbookListFrame } from './learn/workbookListFrame.joy.ts'
-import { zoomFrame } from './learn/zoomFrame.joy.ts'
+import { workbookListApplet } from './learn/workbookListApplet.joy.ts'
+import { zoomApplet } from './learn/zoomApplet.joy.ts'
 
 execute(`
     We're just going to generate code.
@@ -73,25 +73,25 @@ learn(picComponent)
 
 learn(picListComponent)
 
-learn(promptFrame)
+learn(promptApplet)
 
 learn(promptProtocol)
 
-learn(uploadPicFrame)
+learn(uploadPicApplet)
 
-learn(uploadWorkbookFrame)
+learn(uploadWorkbookApplet)
 
 learn(viewerComponent)
 
 learn(windows)
 
-learn(workbookFrame)
+learn(workbookApplet)
 
 learn(workbookProtocol)
 
-learn(workbookListFrame)
+learn(workbookListApplet)
 
-learn(zoomFrame)
+learn(zoomApplet)
 
 execute(`
     before proceeding, let me know if everything makes sense and if you have enough details to build:

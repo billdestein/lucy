@@ -1,7 +1,7 @@
 import React from 'react'
 import { canvas } from '@bill-destein/react-better-frames'
-import DemoPanel from '../panels/DemoPanel'
-import WorkbookListPanel from '../panels/WorkbookListPanel'
+import DemoApplet from '../applets/DemoApplet'
+import WorkbookListApplet from '../applets/WorkbookListApplet'
 import { signOut } from '../auth'
 
 export default function MainMenuComponent() {
@@ -20,8 +20,8 @@ export default function MainMenuComponent() {
             }}
         >
             <div style={{ display: 'flex', gap: 4 }}>
-                <button onClick={() => canvas.addFrame(DemoPanel, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
-                <button onClick={() => canvas.addFrame(WorkbookListPanel, {})} style={menuButtonStyle}>Workbooks</button>
+                <button onClick={() => canvas.addFrame(DemoApplet, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
+                <button onClick={() => canvas.addFrame(WorkbookListApplet, {})} style={menuButtonStyle}>Workbooks</button>
             </div>
             <button onClick={signOut} style={menuButtonStyle}>Sign Out</button>
         </div>

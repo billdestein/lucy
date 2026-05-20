@@ -1,10 +1,10 @@
 //----------------------------------------------------------------------------------------------------
-// uploadPicPanel
+// uploadPicApplet
 //----------------------------------------------------------------------------------------------------
-export const uploadPicPanel = `
+export const uploadPicApplet = `
 
-The UploadPicPanel is a React component that wraps Frame.  It is opened as a modal
-from WorkbookPanel.
+The UploadPicApplet is a React component that wraps Frame.  It is opened as a modal
+from WorkbookApplet.
 
 It receives a message with two fields:
   - workbookName: string

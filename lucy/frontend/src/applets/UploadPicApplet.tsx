@@ -9,7 +9,7 @@ type Message = {
     onUploaded: (workbook: WorkbookType) => void
 }
 
-export default function UploadPicPanel(props: FrameProps) {
+export default function UploadPicApplet(props: FrameProps) {
     const { workbookName, onUploaded } = props.message as Message
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)

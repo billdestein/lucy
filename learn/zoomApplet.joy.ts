@@ -1,11 +1,11 @@
 //----------------------------------------------------------------------------------------------------
-// zoomPanel
+// zoomApplet
 //----------------------------------------------------------------------------------------------------
-export const zoomPanel = `
+export const zoomApplet = `
 
-The ZoomPanel is a React component that wraps Frame.
+The ZoomApplet is a React component that wraps Frame.
 
-The ZoomPanel takes two props via message:
+The ZoomApplet takes two props via message:
 
 - encodedImage - a base64-encoded string containing a png or a jpg
 

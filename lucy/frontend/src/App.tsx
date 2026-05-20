@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { getIdToken, handleCallback, signIn } from './auth'
 import { canvas } from '@bill-destein/react-better-frames'
 import MainMenuComponent from './components/MainMenuComponent'
-import WorkbookListPanel from './panels/WorkbookListPanel'
+import WorkbookListApplet from './applets/WorkbookListApplet'
 
 async function loginToBackend(idToken: string) {
     try {
@@ -49,7 +49,7 @@ export default function App() {
         if (idToken && canvasRef.current && !canvasInitialized.current) {
             canvasInitialized.current = true
             canvas.setCanvas(canvasRef.current)
-            canvas.addFrame(WorkbookListPanel, {})
+            canvas.addFrame(WorkbookListApplet, {})
         }
     }, [idToken])
 

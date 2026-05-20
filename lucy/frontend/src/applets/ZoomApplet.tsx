@@ -7,7 +7,7 @@ type Message = {
     mimeType: string
 }
 
-export default function ZoomPanel(props: FrameProps) {
+export default function ZoomApplet(props: FrameProps) {
     const { encodedImage, mimeType } = props.message as Message
 
     return (

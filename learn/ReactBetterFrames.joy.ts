@@ -16,12 +16,12 @@ The Canvas is a small library written in Typescript.  It has functions addFrame 
 
 The main React app renders a div and then tells the Canvas library to use that div as the canvas.
 
-## Panels and the Frame component
+## Applets and the Frame component
 
-A Panel is a React component such as WorkbookListPanel or WorkbookPanel.  Panels are what
-the Canvas adds to the canvas — canvas.addFrame takes a Panel component type as its first argument.
+A Applet is a React component such as WorkbookListApplet or WorkbookApplet.  Applets are what
+the Canvas adds to the canvas — canvas.addFrame takes a Applet component type as its first argument.
 
-A Panel receives a single prop of type FrameProps:
+A Applet receives a single prop of type FrameProps:
 
 type FrameProps = {
     frameId: number
@@ -34,7 +34,7 @@ type FrameProps = {
     zIndex: number
 }
 
-The Panel reads the data it needs from message.  It computes its own title and
+The Applet reads the data it needs from message.  It computes its own title and
 header buttons.  It then renders the Frame component, passing the title, header buttons,
 its viewport content as children, and the geometry fields from FrameProps.
 
@@ -42,7 +42,7 @@ The Frame component is the generic chrome defined in lucy/frontend/src/Frame.  I
 responsible for the border, header bar, drag, and resize behavior.  It accepts:
 
 - The FrameProps fields (frameId, height, isModal, width, x, y, zIndex) for geometry
-  and identity.  It does not use message — that is for the Panel only.
+  and identity.  It does not use message — that is for the Applet only.
 - title: string — displayed left-aligned in the header
 - headerButtons: ReactNode — displayed right-aligned in the header
 - children: ReactNode — rendered in the viewport
@@ -66,7 +66,7 @@ The FrameProps properties are:
 - isModal indicates whether or not the frame is a 'modal' frame.  More information on modal
   frames follows.
 
-- message is an opaque data object used by the Panel to initialize itself.
+- message is an opaque data object used by the Applet to initialize itself.
   The Frame component does not read message.
 
 - width is the initial width of the Frame's viewport in pixels. Defaults to 800
@@ -77,7 +77,7 @@ The FrameProps properties are:
 - y is the initial distance in pixels from the top of the canvas to the top of the frame.
   If not specified, the frame sets y to the y value of the nearest frame (in z order) plus 50.
 
-The Canvas addFrame function takes two arguments.  The first is the Panel component
+The Canvas addFrame function takes two arguments.  The first is the Applet component
 type, and the second is of type FrameProps.
 
 For each frame currently on the canvas, the canvas has it's own representation of the
