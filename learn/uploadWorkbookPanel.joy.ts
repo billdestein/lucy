@@ -1,10 +1,10 @@
 //----------------------------------------------------------------------------------------------------
-// uploadWorkbookFrame
+// uploadWorkbookPanel
 //----------------------------------------------------------------------------------------------------
-export const uploadWorkbookFrame = `
+export const uploadWorkbookPanel = `
 
-The UploadWorkbookFrame is a React component that wraps Frame.
+The UploadWorkbookPanel is a React component that wraps Frame.
 
-The frame viewport has text "UploadWorkbookFrame"
+The frame viewport has text "UploadWorkbookPanel"
 
 `

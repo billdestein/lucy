@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import Frame from '../Frame'
-import { FrameProps, canvas } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps, canvas } from '@bill-destein/react-better-frames'
 import { isValidFilename } from '../promptProtocol'
 
 type Message = {
@@ -8,7 +8,7 @@ type Message = {
     onOk: (value: string) => void
 }
 
-export default function PromptFrame(props: FrameProps) {
+export default function PromptPanel(props: FrameProps) {
     const { frameId, prompt, onOk } = { ...props, ...(props.message as Message) }
     const [text, setText] = useState('')
     const [error, setError] = useState('')

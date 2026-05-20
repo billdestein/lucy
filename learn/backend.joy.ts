@@ -235,7 +235,11 @@ The Express JSON body size limit is set to 20mb to accommodate base64-encoded im
 
 The backend uses the standard redis client library -- not ioredis
 
-The Redis client must have tls: true in the socket config. ElastiCache Serverless requires TLS.
+The Redis client must have tls: true in the socket config for production. ElastiCache Serverless
+requires TLS. However, local Redis does not support TLS. Set tls conditionally:
+
+    const isLocal = config.redisHost === 'localhost' || config.redisHost === '127.0.0.1'
+    tls: !isLocal
 
 The path for workbooks is: MOUNT_DIR/users/{slug}/workbooks/{workbookName}/
 

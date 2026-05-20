@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import Frame from '../Frame'
-import { FrameProps, canvas } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps, canvas } from '@bill-destein/react-better-frames'
 import { WorkbookProvider } from '../WorkbookContext'
 import { WorkbookType, PicType, PromptType } from '@billdestein/joy-common'
 import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
@@ -9,8 +9,8 @@ import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent
 import PicListComponent from '../components/PicListComponent'
 import ViewerComponent from '../components/ViewerComponent'
 import ComposerComponent from '../components/ComposerComponent'
-import UploadPicFrame from './UploadPicFrame'
-import PromptFrame from './PromptFrame'
+import UploadPicPanel from './UploadPicPanel'
+import PromptPanel from './PromptPanel'
 
 function Slider({ orientation, onMouseDown }: { orientation: 'horizontal' | 'vertical'; onMouseDown: (e: React.MouseEvent) => void }) {
     const [hovered, setHovered] = React.useState(false)
@@ -41,7 +41,7 @@ function emptyWorkbook(name: string): WorkbookType {
     return { createdAt: Date.now(), focusedPicFilename: 'empty', pics: [emptyPic], prompts: [emptyPrompt], workbookName: name }
 }
 
-export default function WorkbookFrame(props: FrameProps) {
+export default function WorkbookPanel(props: FrameProps) {
     const { workbookName } = props.message as Message
     const [workbook, setWorkbook] = useState<WorkbookType>(emptyWorkbook(workbookName))
     const [isLoading, setIsLoading] = useState(false)
@@ -109,7 +109,7 @@ export default function WorkbookFrame(props: FrameProps) {
     }
 
     function cloneHandler() {
-        canvas.addFrame(PromptFrame, {
+        canvas.addFrame(PromptPanel, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -126,7 +126,7 @@ export default function WorkbookFrame(props: FrameProps) {
     }
 
     function uploadHandler() {
-        canvas.addFrame(UploadPicFrame, {
+        canvas.addFrame(UploadPicPanel, {
             isModal: true,
             message: {
                 workbookName,

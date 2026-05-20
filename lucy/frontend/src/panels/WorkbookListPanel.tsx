@@ -3,15 +3,15 @@ import { AgGridReact } from 'ag-grid-react'
 import { ColDef, GridApi } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import Frame from '../Frame'
-import { FrameProps, canvas } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps, canvas } from '@bill-destein/react-better-frames'
 import { WorkbookType } from '@billdestein/joy-common'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend } from '../workbookProtocol'
 import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent'
-import PromptFrame from './PromptFrame'
-import UploadWorkbookFrame from './UploadWorkbookFrame'
-import WorkbookFrame from './WorkbookFrame'
+import PromptPanel from './PromptPanel'
+import UploadWorkbookPanel from './UploadWorkbookPanel'
+import WorkbookPanel from './WorkbookPanel'
 
 type RowData = {
     name: string
@@ -42,7 +42,7 @@ function wbToRow(wb: WorkbookType): RowData {
     }
 }
 
-export default function WorkbookListFrame(props: FrameProps) {
+export default function WorkbookListPanel(props: FrameProps) {
     const [rowData, setRowData] = useState<RowData[]>([])
     const gridApiRef = useRef<GridApi | null>(null)
     const gridContainerRef = useRef<HTMLDivElement>(null)
@@ -93,11 +93,11 @@ export default function WorkbookListFrame(props: FrameProps) {
     }, [])
 
     function openWorkbook(wb: WorkbookType) {
-        canvas.addFrame(WorkbookFrame, { message: { workbookName: wb.workbookName } })
+        canvas.addFrame(WorkbookPanel, { message: { workbookName: wb.workbookName } })
     }
 
     function cloneWorkbook(wb: WorkbookType) {
-        canvas.addFrame(PromptFrame, {
+        canvas.addFrame(PromptPanel, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -135,7 +135,7 @@ export default function WorkbookListFrame(props: FrameProps) {
     }
 
     function addWorkbook() {
-        canvas.addFrame(PromptFrame, {
+        canvas.addFrame(PromptPanel, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for your new workbook:',
@@ -157,7 +157,7 @@ export default function WorkbookListFrame(props: FrameProps) {
             <FrameHeaderButtonComponent icon={ButtonIcons.plus} handler={addWorkbook} tooltipLabel="New Workbook" />
             <FrameHeaderButtonComponent
                 icon={ButtonIcons.upload}
-                handler={() => canvas.addFrame(UploadWorkbookFrame, { message: { onComplete: loadWorkbooks } })}
+                handler={() => canvas.addFrame(UploadWorkbookPanel, { message: { onComplete: loadWorkbooks } })}
                 tooltipLabel="Upload Workbook"
             />
             <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => canvas.removeFrame(props.frameId)} tooltipLabel="Close" />

@@ -7,6 +7,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@bill-destein/react-better-frames": "file:../frames",
     "@billdestein/joy-common": "file:../common",
     "@monaco-editor/react": "^4.6.0",
     "ag-grid-community": "^30.0.0",

@@ -1,12 +1,12 @@
 import React from 'react'
-import Frame from '../Frame'
-import { FrameProps } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps } from '@bill-destein/react-better-frames'
 
-export default function UploadWorkbookFrame(props: FrameProps) {
+export default function UploadWorkbookPanel(props: FrameProps) {
     return (
         <Frame {...props} title="Upload Workbook">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: 13 }}>
-                UploadWorkbookFrame
+                UploadWorkbookPanel
             </div>
         </Frame>
     )

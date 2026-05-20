@@ -4,8 +4,8 @@ import ComposerButtonComponent from './ComposerButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend, hydrateFromBackend } from '../workbookProtocol'
 import { getOutputFilename } from '../promptProtocol'
-import { canvas } from '../canvas'
-import PromptFrame from '../frames/PromptFrame'
+import { canvas } from '@bill-destein/react-better-frames'
+import PromptPanel from '../panels/PromptPanel'
 import { WorkbookType } from '@billdestein/joy-common'
 
 type Props = { editorText: string }
@@ -68,7 +68,7 @@ export default function ComposerButtonRowComponent({ editorText }: Props) {
         if (filename) {
             runPrompt(filename)
         } else {
-            canvas.addFrame(PromptFrame, {
+            canvas.addFrame(PromptPanel, {
                 isModal: true,
                 message: {
                     prompt: 'Enter a filename for the generated image:',

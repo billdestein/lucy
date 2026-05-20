@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react'
-import Frame from '../Frame'
-import { FrameProps, canvas } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps, canvas } from '@bill-destein/react-better-frames'
 import { WorkbookType } from '@billdestein/joy-common'
 import { ButtonIcons } from '../ButtonIcons'
 
@@ -9,7 +9,7 @@ type Message = {
     onUploaded: (workbook: WorkbookType) => void
 }
 
-export default function UploadPicFrame(props: FrameProps) {
+export default function UploadPicPanel(props: FrameProps) {
     const { workbookName, onUploaded } = props.message as Message
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)

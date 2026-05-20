@@ -1,13 +1,13 @@
 import React from 'react'
-import Frame from '../Frame'
-import { FrameProps } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps } from '@bill-destein/react-better-frames'
 
 type Message = {
     encodedImage: string
     mimeType: string
 }
 
-export default function ZoomFrame(props: FrameProps) {
+export default function ZoomPanel(props: FrameProps) {
     const { encodedImage, mimeType } = props.message as Message
 
     return (

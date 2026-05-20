@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getIdToken, handleCallback, signIn } from './auth'
-import { canvas } from './canvas'
+import { canvas } from '@bill-destein/react-better-frames'
 import MainMenuComponent from './components/MainMenuComponent'
-import WorkbookListFrame from './frames/WorkbookListFrame'
+import WorkbookListPanel from './panels/WorkbookListPanel'
 
 async function loginToBackend(idToken: string) {
     try {
@@ -49,7 +49,7 @@ export default function App() {
         if (idToken && canvasRef.current && !canvasInitialized.current) {
             canvasInitialized.current = true
             canvas.setCanvas(canvasRef.current)
-            canvas.addFrame(WorkbookListFrame, {})
+            canvas.addFrame(WorkbookListPanel, {})
         }
     }, [idToken])
 

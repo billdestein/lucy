@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../common"
 npm run build
 
+cd "$SCRIPT_DIR/../frames"
+npm run build
+
 if [[ "$(uname)" == "Darwin" ]]; then
     FRONTEND_CONFIG="$HOME/lucy-config/FrontendLocalConfig.json"
     BACKEND_CONFIG="$HOME/lucy-config/BackendLocalConfig.json"

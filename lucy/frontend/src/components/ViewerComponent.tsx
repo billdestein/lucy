@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import { canvas } from '../canvas'
-import ZoomFrame from '../frames/ZoomFrame'
+import { canvas } from '@bill-destein/react-better-frames'
+import ZoomPanel from '../panels/ZoomPanel'
 
 export default function ViewerComponent() {
     const { workbook, isLoading, selectedPicFilename } = useWorkbook()
@@ -42,7 +42,7 @@ export default function ViewerComponent() {
     function zoomImage() {
         dismiss()
         if (!pic) return
-        canvas.addFrame(ZoomFrame, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
+        canvas.addFrame(ZoomPanel, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
     }
 
     return (

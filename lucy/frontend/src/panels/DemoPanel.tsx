@@ -1,10 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react'
-import Frame from '../Frame'
-import { FrameProps } from '../canvas'
+import { Frame } from '@bill-destein/react-better-frames'
+import { FrameProps } from '@bill-destein/react-better-frames'
 
 const VIDEO_RATIO = 1112 / 625
 
-export default function DemoFrame(props: FrameProps) {
+export default function DemoPanel(props: FrameProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [dims, setDims] = useState({ width: 0, height: 0 })
 

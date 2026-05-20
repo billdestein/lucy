@@ -1,12 +1,14 @@
 import { createClient } from 'redis'
 import { config } from '../config'
 
+const isLocal = config.redisHost === 'localhost' || config.redisHost === '127.0.0.1'
+
 const client = createClient({
     socket: {
         host: config.redisHost,
         port: config.redisPort,
         connectTimeout: 5000,
-        tls: true,
+        tls: !isLocal,
     },
 })
 

@@ -1,19 +1,18 @@
 //----------------------------------------------------------------------------------------------------
-// workbookListFrame
+// workbookListPanel
 //----------------------------------------------------------------------------------------------------
-export const workbookListFrame = `
+export const workbookListPanel = `
 
-The WorkbookListFrame is a React component that wraps Frame.
+The WorkbookListPanel is a React component that wraps Frame.
 
-At initialization, a WorkbookList calls the list-workbooks endpoint on the backend server.
+At initialization, WorkbookListPanel calls the list-workbooks endpoint on the backend server.
 
-The WorkbookListFrame has an AG Grid React that fills the frame body.
+The WorkbookListPanel has an AG Grid React that fills the frame body.
 
 Use ag-grid-community and ag-grid-react version ^30.0.0.
 Import 'ag-grid-community/styles/ag-grid.css' and 'ag-grid-community/styles/ag-theme-alpine.css'.
 Use className "ag-theme-alpine-dark" on the grid container div. Do NOT import a separate
 ag-theme-alpine-dark.css file — the dark variant is a class defined within ag-theme-alpine.css.
-
 
 The grid has one row for each workbook returned from the backend.
 
@@ -33,10 +32,10 @@ Columns 1 and 2 are sortable.  Column 3 is not.
 The AG Grid row data is NOT a WorkbookType. Each row object has the shape:
 { name, lastModifiedISO, lastModifiedAgo, _wb: WorkbookType }
 where _wb holds the original WorkbookType. When the context menu needs the WorkbookType
-(e.g. to pass to an API call or to open a WorkbookFrame), always read rowNode.data._wb —
+(e.g. to pass to an API call or to open a WorkbookPanel), always read rowNode.data._wb —
 do not cast rowNode.data directly as WorkbookType, as it does not have a workbookName property.
 
-Left-clicking a row opens the corresponding WorkbookFrame, the same as the "Open workbook" context menu option.
+Left-clicking a row opens the corresponding WorkbookPanel, the same as the "Open workbook" context menu option.
 
 Each row has a context menu.  The context menu is implemented from scratch.  It does not
 use AG Grids context menu features.  When the user right clicks on a row, the context menu
@@ -51,7 +50,7 @@ onGridReady.
 
 The context menu has these four options:
 
-The "Clone workbook" option opens a PromptFrame asking for a new workbook name.
+The "Clone workbook" option opens a PromptPanel asking for a new workbook name.
 On ok, it POSTs to /v1/workbooks/clone-workbook with { workbook, newWorkbookName }
 and then refreshes the grid.
 
@@ -61,10 +60,10 @@ delete-workbook endpoint.  It uses the response to refresh the grid.
 The "Download workbook" option stringifies the workbook with an indent of four,
 and downloads it as workbook.lucy.
 
-The "Open workbook" calls canvas.addFrame to add the WorkbookFrame.
-The selected workbook name is passed as a prop to the WorkbookFrame.
+The "Open workbook" calls canvas.addFrame to add the WorkbookPanel.
+The selected workbook name is passed as a prop to the WorkbookPanel.
 
-The frame has these three FrameHeaderButtonComponents right-aligned in the header:  
+The frame has these three FrameHeaderButtonComponents right-aligned in the header:
 
 {
     icon: ButtonIcons.plus
@@ -86,11 +85,11 @@ The frame has these three FrameHeaderButtonComponents right-aligned in the heade
 
 The surrounding frame has the string 'Workbooks' left-aligned in the header.
 
-The addWorkbookHandler uses PromptFrame with prompt "Enter a name for your new workbook",
+The addWorkbookHandler uses PromptPanel with prompt "Enter a name for your new workbook",
 and then makes an API call to the backend's create-workbook endpoint.
 
-The uploadWorkbook function creates an instance of the UploadWorkbookFrame.  The 
-UploadWorkbookFrame calls its callback function when complete.  The callback
+The uploadWorkbook function creates an instance of the UploadWorkbookPanel.
+UploadWorkbookPanel calls its callback function when complete.  The callback
 function refreshes the grid.
 
 `

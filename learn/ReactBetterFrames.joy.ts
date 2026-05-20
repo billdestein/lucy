@@ -1,13 +1,13 @@
 //----------------------------------------------------------------------------------------------------
-// Windows
+// ReactBetterFrames
 //----------------------------------------------------------------------------------------------------
-export const windows = `
+export const reactBetterFrames = `
 
 The windows library is a windowing system for React applications.
 
-The idea is that we want to have a single main react app.  The main react has a div, 
-usually a large div, that we call the canvas.  Within the canvas, we can have multiple 'Frames'.  
-A frame is a rectangular region that can be dragged and resized through mouse gestures.  When 
+The idea is that we want to have a single main react app.  The main react has a div,
+usually a large div, that we call the canvas.  Within the canvas, we can have multiple 'Frames'.
+A frame is a rectangular region that can be dragged and resized through mouse gestures.  When
 there are two or more frames on the canvas, the frams can be stacked and restacked (using z-index).
 
 The windows library consists of two parts: the Canvas, and the Frame.
@@ -16,13 +16,12 @@ The Canvas is a small library written in Typescript.  It has functions addFrame 
 
 The main React app renders a div and then tells the Canvas library to use that div as the canvas.
 
-## Frame wrappers and the Frame component
+## Panels and the Frame component
 
-A frame wrapper is a React component such as WorkbookListFrame or WorkbookFrame.  Frame
-wrappers are what the Canvas adds to the canvas — canvas.addFrame takes a frame wrapper
-component type as its first argument.
+A Panel is a React component such as WorkbookListPanel or WorkbookPanel.  Panels are what
+the Canvas adds to the canvas — canvas.addFrame takes a Panel component type as its first argument.
 
-A frame wrapper receives a single prop of type FrameProps:
+A Panel receives a single prop of type FrameProps:
 
 type FrameProps = {
     frameId: number
@@ -35,7 +34,7 @@ type FrameProps = {
     zIndex: number
 }
 
-The frame wrapper reads the data it needs from message.  It computes its own title and
+The Panel reads the data it needs from message.  It computes its own title and
 header buttons.  It then renders the Frame component, passing the title, header buttons,
 its viewport content as children, and the geometry fields from FrameProps.
 
@@ -43,7 +42,7 @@ The Frame component is the generic chrome defined in lucy/frontend/src/Frame.  I
 responsible for the border, header bar, drag, and resize behavior.  It accepts:
 
 - The FrameProps fields (frameId, height, isModal, width, x, y, zIndex) for geometry
-  and identity.  It does not use message — that is for the frame wrapper only.
+  and identity.  It does not use message — that is for the Panel only.
 - title: string — displayed left-aligned in the header
 - headerButtons: ReactNode — displayed right-aligned in the header
 - children: ReactNode — rendered in the viewport
@@ -67,7 +66,7 @@ The FrameProps properties are:
 - isModal indicates whether or not the frame is a 'modal' frame.  More information on modal
   frames follows.
 
-- message is an opaque data object used by the frame wrapper to initialize itself.
+- message is an opaque data object used by the Panel to initialize itself.
   The Frame component does not read message.
 
 - width is the initial width of the Frame's viewport in pixels. Defaults to 800
@@ -78,7 +77,7 @@ The FrameProps properties are:
 - y is the initial distance in pixels from the top of the canvas to the top of the frame.
   If not specified, the frame sets y to the y value of the nearest frame (in z order) plus 50.
 
-The Canvas addFrame function takes two arguments.  The first is the frame wrapper component
+The Canvas addFrame function takes two arguments.  The first is the Panel component
 type, and the second is of type FrameProps.
 
 For each frame currently on the canvas, the canvas has it's own representation of the
@@ -86,13 +85,13 @@ frame.  That representation includes the FrameProps.  So it has initial values f
 y, height, width and z-index.  The representation also includes the frames' current
 x, y, height, width and z-index.
 
-Modal frames are different from regular frames.  When the Canvas adds a new modal frame, it first adds 
+Modal frames are different from regular frames.  When the Canvas adds a new modal frame, it first adds
 a 'click catcher' div to the DOM.  The click catcher div is translucent gray.
 The click catcher covers the entire canvas.  It has a z-index one greater current z-index of all
-frames currently on the canvas.  The click catcher blocks all pointer events from reaching anything behind it.  Do not set pointer-events:none on it — that would cause clicks to pass through rather than be blocked.  Once the click catcher 
-is in place, the canvas adds the new modal frame.  The modal frame is centered on the canvas both 
+frames currently on the canvas.  The click catcher blocks all pointer events from reaching anything behind it.  Do not set pointer-events:none on it — that would cause clicks to pass through rather than be blocked.  Once the click catcher
+is in place, the canvas adds the new modal frame.  The modal frame is centered on the canvas both
 horizontally and vertically. Its x and y props are ignored. Its z-index value is one greater than that
-of the click catcher. When asked to remove the modal frame, the canvas also removes the click catcher 
+of the click catcher. When asked to remove the modal frame, the canvas also removes the click catcher
 div from the DOM.
 
 All dragging, resizing and restacking is done through direct DOM manipulation.  We don't want mouse gestures on
@@ -111,7 +110,7 @@ A frame can be dragged upward but only until the top of the frame touches the to
 A frame can be dragged downward but only until the bottom of the frame header touches the top of
 the viewport.
 
-A frame can be dragged left but only until the right edge of the frame is 30 pixels from the 
+A frame can be dragged left but only until the right edge of the frame is 30 pixels from the
 left side of the viewport.
 
 A frame can be dragged right but only until the left edge of the frame is 30 pixels from the
