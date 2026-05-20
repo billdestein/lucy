@@ -26,5 +26,9 @@ The image has a context menu with these options:
 - "Zoom": adds a ZoomFrame to the canvas.  The encoded image and mime type are passed as props.  
 
 While the surrounding workbook has an API call to the generate-pic is pending show a spinner.
+The spinner is 72px, centered over a rgba(0,0,0,0.4) overlay that covers the viewer.
+It is a rainbow conic-gradient ring (red → orange → yellow → green → blue → purple → red),
+masked to a 7px-wide arc using radial-gradient on the mask property (and WebkitMask).
+It rotates with a 1s linear CSS animation.
 
 `

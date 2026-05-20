@@ -61,8 +61,13 @@ export default function ViewerComponent() {
             onClick={dismiss}
         >
             {isLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 10 }}>
-                    <div style={{ width: 40, height: 40, border: '4px solid #555', borderTopColor: '#ccc', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', zIndex: 10 }}>
+                    <div style={{
+                        width: 72, height: 72, borderRadius: '50%', animation: 'spin 1s linear infinite',
+                        background: 'conic-gradient(from 0deg, #e74c3c, #f39c12, #f1c40f, #2ecc71, #3498db, #9b59b6, #e74c3c)',
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px))',
+                    }} />
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                 </div>
             )}
