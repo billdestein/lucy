@@ -78,4 +78,38 @@ on port 8080. Add this to vite.config.ts:
 Without this proxy, all fetch('/v1/...') calls from the frontend hit Vite on port 5173
 instead of the backend, and silently fail.
 
+The canvas is implemented as a plain div. Each frame is mounted into a child div via
+ReactDOM.createRoot, giving each frame its own isolated React tree.
+
+The Frame component handles dragging and four-edge resizing. The rules that must be followed:
+
+1. Use onMouseDownCapture (not onMouseDown) on the outer div. The capture phase fires on
+   the parent before any child's bubble-phase handler runs. This lets the outer div intercept
+   resize clicks at the edges before the header's drag handler sees them. For edge clicks,
+   call e.stopPropagation() to prevent the header handler from also firing. For non-edge
+   clicks, return early without stopping propagation so normal header drag works.
+
+2. Track the cursor in onMouseMove on the outer div (bubble phase). Because events bubble
+   up from children, this single handler covers the whole frame surface. Never use React
+   state for the cursor — it causes re-renders that break active drag operations. Instead,
+   write directly to outer.style.cursor.
+
+3. Use a draggingRef (useRef(false)) to freeze cursor updates during an active drag or
+   resize. At the start of any drag/resize, set draggingRef.current = true; in the mouseup
+   cleanup, set it back to false. In onMouseMove, return early if draggingRef.current is true.
+
+4. Set document.body.style.cursor at the start of a drag/resize to lock the cursor globally.
+   This prevents child elements (Monaco editor, AG Grid, etc.) from overriding it mid-drag.
+   Clear it in the mouseup cleanup.
+
+5. All four edges (top, bottom, left, right, and corners) resize the frame. Left and top
+   resize must also adjust the frame's left/top position to keep the opposite edge fixed.
+
+6. The header drag handler goes on the header child div as onMouseDown (bubble phase). It is
+   only reached for non-edge clicks because the capture handler on the outer div stops
+   propagation for edge clicks.
+
+7. The header buttons container should have onMouseDown={e => e.stopPropagation()} so that
+   clicking a button does not start a header drag.
+
 `

@@ -1,5 +1,6 @@
 import React from 'react'
 import { canvas } from '../canvas'
+import DemoFrame from '../frames/DemoFrame'
 import WorkbookListFrame from '../frames/WorkbookListFrame'
 import { signOut } from '../auth'
 
@@ -18,15 +19,11 @@ export default function MainMenuComponent() {
                 borderBottom: '1px solid #444',
             }}
         >
-            <button
-                onClick={() => canvas.addFrame(WorkbookListFrame, {})}
-                style={menuButtonStyle}
-            >
-                Workbooks
-            </button>
-            <button onClick={signOut} style={menuButtonStyle}>
-                Sign Out
-            </button>
+            <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => canvas.addFrame(DemoFrame, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
+                <button onClick={() => canvas.addFrame(WorkbookListFrame, {})} style={menuButtonStyle}>Workbooks</button>
+            </div>
+            <button onClick={signOut} style={menuButtonStyle}>Sign Out</button>
         </div>
     )
 }

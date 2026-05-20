@@ -3,7 +3,7 @@ import { FrameProps, canvas } from './canvas'
 
 const BORDER = 5
 const HEADER_H = 30
-const RESIZE_ZONE = 10
+const ZONE = 10
 
 type Props = FrameProps & {
     title: string
@@ -11,71 +11,97 @@ type Props = FrameProps & {
     children: ReactNode
 }
 
-export default function Frame({ frameId, height, isModal, width, x, y, zIndex, title, headerButtons, children }: Props) {
+export default function Frame({
+    frameId, height, isModal, width, x, y, zIndex, title, headerButtons, children,
+}: Props) {
     const outerRef = useRef<HTMLDivElement>(null)
-    const drag = useRef({ active: false, startMouseX: 0, startMouseY: 0, startLeft: 0, startTop: 0 })
-    const resize = useRef({ active: false, startMouseX: 0, startMouseY: 0, startW: 0, startH: 0 })
+    const draggingRef = useRef(false)
 
     useEffect(() => {
         const outer = outerRef.current
         if (!outer) return
-
         const totalW = width + BORDER * 2
         const totalH = height + HEADER_H + BORDER * 2
-
         if (isModal) {
-            const canvas = outer.closest('[style*="position: relative"], [style*="position:relative"]') as HTMLElement | null
-            const cw = canvas?.clientWidth ?? window.innerWidth
-            const ch = canvas?.clientHeight ?? window.innerHeight
+            const canvasEl = outer.parentElement?.parentElement as HTMLElement | null
+            const cw = canvasEl?.clientWidth ?? window.innerWidth
+            const ch = canvasEl?.clientHeight ?? window.innerHeight
             outer.style.left = `${Math.max(0, (cw - totalW) / 2)}px`
-            outer.style.top = `${Math.max(0, (ch - totalH) / 2)}px`
+            outer.style.top  = `${Math.max(0, (ch - totalH) / 2)}px`
         } else {
             outer.style.left = `${x}px`
-            outer.style.top = `${y}px`
+            outer.style.top  = `${y}px`
         }
-        outer.style.width = `${totalW}px`
+        outer.style.width  = `${totalW}px`
         outer.style.height = `${totalH}px`
         outer.style.zIndex = String(zIndex)
     }, [])
 
-    function getCanvas(): HTMLElement | null {
-        return outerRef.current?.parentElement?.parentElement ?? null
+    function zones(e: React.MouseEvent) {
+        const outer = outerRef.current!
+        const rect = outer.getBoundingClientRect()
+        const rx = e.clientX - rect.left
+        const ry = e.clientY - rect.top
+        const ow = outer.offsetWidth
+        const oh = outer.offsetHeight
+        return {
+            nearLeft:   rx < ZONE,
+            nearRight:  rx >= ow - ZONE,
+            nearTop:    ry < ZONE,
+            nearBottom: ry >= oh - ZONE,
+            inHeader:   ry >= ZONE && ry < BORDER + HEADER_H,
+        }
+    }
+
+    function onOuterMouseMove(e: React.MouseEvent) {
+        if (draggingRef.current) return
+        const outer = outerRef.current!
+        const { nearLeft, nearRight, nearTop, nearBottom, inHeader } = zones(e)
+
+        let cursor = 'default'
+        if      (nearTop    && nearLeft)  cursor = 'nw-resize'
+        else if (nearTop    && nearRight) cursor = 'ne-resize'
+        else if (nearBottom && nearLeft)  cursor = 'sw-resize'
+        else if (nearBottom && nearRight) cursor = 'se-resize'
+        else if (nearTop)                 cursor = 'n-resize'
+        else if (nearBottom)              cursor = 's-resize'
+        else if (nearLeft)                cursor = 'w-resize'
+        else if (nearRight)               cursor = 'e-resize'
+        else if (inHeader && !isModal)    cursor = 'grab'
+        outer.style.cursor = cursor
     }
 
     function onHeaderMouseDown(e: React.MouseEvent) {
         if (isModal) return
         e.preventDefault()
-        canvas.bringToFront(frameId)
+
         const outer = outerRef.current!
-        drag.current = {
-            active: true,
-            startMouseX: e.clientX,
-            startMouseY: e.clientY,
-            startLeft: outer.offsetLeft,
-            startTop: outer.offsetTop,
-        }
+        const startMouseX = e.clientX
+        const startMouseY = e.clientY
+        const startLeft   = outer.offsetLeft
+        const startTop    = outer.offsetTop
+        const canvasEl    = outer.parentElement?.parentElement as HTMLElement | null
 
-        function onMouseMove(e: MouseEvent) {
-            if (!drag.current.active) return
-            const cv = getCanvas()
-            const cvW = cv?.clientWidth ?? window.innerWidth
-            const cvH = cv?.clientHeight ?? window.innerHeight
-            const outer = outerRef.current!
-            const ow = outer.offsetWidth
-            const oh = outer.offsetHeight
+        draggingRef.current = true
+        document.body.style.cursor     = 'grabbing'
+        document.body.style.userSelect = 'none'
 
-            let newLeft = drag.current.startLeft + (e.clientX - drag.current.startMouseX)
-            let newTop = drag.current.startTop + (e.clientY - drag.current.startMouseY)
-
+        function onMouseMove(ev: MouseEvent) {
+            const cvW = canvasEl?.clientWidth  ?? window.innerWidth
+            const cvH = canvasEl?.clientHeight ?? window.innerHeight
+            const ow  = outer.offsetWidth
+            let newLeft = startLeft + (ev.clientX - startMouseX)
+            let newTop  = startTop  + (ev.clientY - startMouseY)
             newLeft = Math.max(30 - ow, Math.min(cvW - 30, newLeft))
-            newTop = Math.max(0, Math.min(cvH - HEADER_H - BORDER * 2, newTop))
-
+            newTop  = Math.max(0, Math.min(cvH - HEADER_H - BORDER * 2, newTop))
             outer.style.left = `${newLeft}px`
-            outer.style.top = `${newTop}px`
+            outer.style.top  = `${newTop}px`
         }
 
         function onMouseUp() {
-            drag.current.active = false
+            draggingRef.current = false
+            document.body.style.cursor     = ''
+            document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMouseMove)
             window.removeEventListener('mouseup', onMouseUp)
         }
@@ -84,40 +110,51 @@ export default function Frame({ frameId, height, isModal, width, x, y, zIndex, t
         window.addEventListener('mouseup', onMouseUp)
     }
 
-    function onBorderMouseDown(e: React.MouseEvent) {
-        const outer = outerRef.current!
-        const rect = outer.getBoundingClientRect()
-        const rx = e.clientX - rect.left
-        const ry = e.clientY - rect.top
-        const ow = outer.offsetWidth
-        const oh = outer.offsetHeight
-
-        const nearRight = rx >= ow - RESIZE_ZONE
-        const nearBottom = ry >= oh - RESIZE_ZONE
-        if (!nearRight && !nearBottom) return
-
-        e.preventDefault()
+    // Capture phase runs before onHeaderMouseDown so we can steal resize clicks at the edges
+    function onOuterMouseDownCapture(e: React.MouseEvent) {
         canvas.bringToFront(frameId)
-        resize.current = {
-            active: true,
-            startMouseX: e.clientX,
-            startMouseY: e.clientY,
-            startW: ow,
-            startH: oh,
-        }
+        if (e.button !== 0) return
 
-        function onMouseMove(e: MouseEvent) {
-            if (!resize.current.active) return
-            const outer = outerRef.current!
-            const dx = e.clientX - resize.current.startMouseX
-            const dy = e.clientY - resize.current.startMouseY
+        const outer = outerRef.current!
+        const { nearLeft, nearRight, nearTop, nearBottom } = zones(e)
+        if (!nearLeft && !nearRight && !nearTop && !nearBottom) return
 
-            if (nearRight) outer.style.width = `${Math.max(200, resize.current.startW + dx)}px`
-            if (nearBottom) outer.style.height = `${Math.max(150, resize.current.startH + dy)}px`
+        // Prevent the header drag handler from also firing for these edge clicks
+        e.stopPropagation()
+        e.preventDefault()
+
+        const startMouseX = e.clientX
+        const startMouseY = e.clientY
+        const startLeft = outer.offsetLeft
+        const startTop  = outer.offsetTop
+        const startW    = outer.offsetWidth
+        const startH    = outer.offsetHeight
+
+        draggingRef.current = true
+        document.body.style.cursor     = outer.style.cursor
+        document.body.style.userSelect = 'none'
+
+        function onMouseMove(ev: MouseEvent) {
+            const dx = ev.clientX - startMouseX
+            const dy = ev.clientY - startMouseY
+            let newLeft = startLeft, newTop = startTop
+            let newW = startW,       newH   = startH
+
+            if (nearRight)  newW = Math.max(200, startW + dx)
+            if (nearBottom) newH = Math.max(150, startH + dy)
+            if (nearLeft)  { newW = Math.max(200, startW - dx); newLeft = startLeft + startW - newW }
+            if (nearTop)   { newH = Math.max(150, startH - dy); newTop  = startTop  + startH - newH }
+
+            outer.style.width  = `${newW}px`
+            outer.style.height = `${newH}px`
+            outer.style.left   = `${newLeft}px`
+            outer.style.top    = `${newTop}px`
         }
 
         function onMouseUp() {
-            resize.current.active = false
+            draggingRef.current = false
+            document.body.style.cursor     = ''
+            document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMouseMove)
             window.removeEventListener('mouseup', onMouseUp)
         }
@@ -136,12 +173,9 @@ export default function Frame({ frameId, height, isModal, width, x, y, zIndex, t
                 background: '#1e1e1e',
                 display: 'flex',
                 flexDirection: 'column',
-                cursor: 'default',
             }}
-            onMouseDown={e => {
-                canvas.bringToFront(frameId)
-                onBorderMouseDown(e)
-            }}
+            onMouseMove={onOuterMouseMove}
+            onMouseDownCapture={onOuterMouseDownCapture}
         >
             <div
                 style={{
@@ -152,7 +186,6 @@ export default function Frame({ frameId, height, isModal, width, x, y, zIndex, t
                     justifyContent: 'space-between',
                     padding: '0 6px',
                     flexShrink: 0,
-                    cursor: isModal ? 'default' : 'grab',
                     userSelect: 'none',
                 }}
                 onMouseDown={onHeaderMouseDown}

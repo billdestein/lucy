@@ -12,6 +12,27 @@ import ComposerComponent from '../components/ComposerComponent'
 import UploadPicFrame from './UploadPicFrame'
 import PromptFrame from './PromptFrame'
 
+function Slider({ orientation, onMouseDown }: { orientation: 'horizontal' | 'vertical'; onMouseDown: (e: React.MouseEvent) => void }) {
+    const [hovered, setHovered] = React.useState(false)
+    const isVert = orientation === 'vertical'
+    return (
+        <div
+            onMouseDown={onMouseDown}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                width:  isVert ? 6 : '100%',
+                height: isVert ? '100%' : 6,
+                flexShrink: 0,
+                cursor: isVert ? 'col-resize' : 'row-resize',
+                background: hovered ? '#555' : '#3c3c3c',
+                transition: 'background 0.1s',
+                zIndex: 1,
+            }}
+        />
+    )
+}
+
 type Message = { workbookName: string }
 
 function emptyWorkbook(name: string): WorkbookType {
@@ -133,18 +154,12 @@ export default function WorkbookFrame(props: FrameProps) {
                     <div style={{ width: `${leftPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                         <PicListComponent />
                     </div>
-                    <div
-                        style={{ width: 5, background: '#3c3c3c', cursor: 'col-resize', flexShrink: 0 }}
-                        onMouseDown={onHorizDragStart}
-                    />
+                    <Slider orientation="vertical" onMouseDown={onHorizDragStart} />
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <div style={{ height: `${topPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <ViewerComponent />
                         </div>
-                        <div
-                            style={{ height: 5, background: '#3c3c3c', cursor: 'row-resize', flexShrink: 0 }}
-                            onMouseDown={onVertDragStart}
-                        />
+                        <Slider orientation="horizontal" onMouseDown={onVertDragStart} />
                         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                             <ComposerComponent />
                         </div>
