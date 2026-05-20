@@ -11,17 +11,24 @@ Frontend uses Cognito for authentication and authorization, so frontend needs
 to know COGNITO_AUTHORITY and COGNITO_CLIENT_ID.
 
 
-Frontend includes a startup script named start.sh.
-The startup checks where it is running.
-If running on MacOS, it reads the file ~/lucy-config/FrontendLocalConfig.json.
-If running on Linux,  it reads the file /mount/lucy-config/FrontendProdConfig.json.
-That file contains an object with these properties:
 
-- COGNITO_AUTHORITY
-- COGNITO_CLIENT_ID
+## Vite environment variables and build-time baking
 
-The startup script assigns those values to their corresponding VITE environment
-variables before starting the frontend server.
+In development (npx vite), VITE_ environment variables are read from the shell at server
+start time and injected into every page load dynamically.
+
+In production, the frontend is built as a static bundle by running 'npm run build'. Vite
+replaces every occurrence of import.meta.env.VITE_* with the literal string value at build
+time. The resulting JS files contain the baked-in values and no longer read from the
+environment at runtime.
+
+This has an important implication: if a VITE_ variable changes (e.g. the Cognito client ID
+is rotated), the frontend must be rebuilt and redeployed — restarting the backend is not
+enough. The backend start.sh handles this automatically because it exports the VITE_ vars
+and runs 'npm run build' in the frontend directory before starting the server.
+
+In development mode, no build step is needed — just restart the Vite dev server with the
+updated config and the new values are picked up immediately.
 
 Initially, frontend shows an all black window with the word "Lucy" centered in the window
 in color gold.  And there's a signin button in the upper right that initiates Cognito login.
@@ -65,51 +72,26 @@ The redirect_uri in both the authorization request and the token exchange must b
 window.location.origin (e.g. http://localhost:5173) — no path suffix like '/callback'.
 Cognito rejects any redirect_uri that doesn't exactly match a registered callback URL.
 
-The Vite dev server must proxy /v1 to the backend so that relative API calls reach Express
-on port 8080. Add this to vite.config.ts:
+## How the frontend reaches the backend
 
-    server: {
-        port: 5173,
-        proxy: {
-            '/v1': 'http://localhost:8080',
-        },
-    }
+All API calls use relative URLs (e.g. fetch('/v1/workbooks/list-workbooks')). There is no
+BACKEND_URL variable in the frontend source. Two mechanisms resolve these relative paths:
 
-Without this proxy, all fetch('/v1/...') calls from the frontend hit Vite on port 5173
-instead of the backend, and silently fail.
+- In development: vite.config.ts proxies /v1/* to http://localhost:8080, so the Vite dev
+  server forwards those requests to the Express backend.
 
-The canvas is implemented as a plain div. Each frame is mounted into a child div via
-ReactDOM.createRoot, giving each frame its own isolated React tree.
+      server: {
+          port: 5173,
+          proxy: {
+              '/v1': 'http://localhost:8080',
+          },
+      }
 
-The Frame component handles dragging and four-edge resizing. The rules that must be followed:
+  Without this proxy, fetch('/v1/...') calls hit Vite on port 5173 and fail.
 
-1. Use onMouseDownCapture (not onMouseDown) on the outer div. The capture phase fires on
-   the parent before any child's bubble-phase handler runs. This lets the outer div intercept
-   resize clicks at the edges before the header's drag handler sees them. For edge clicks,
-   call e.stopPropagation() to prevent the header handler from also firing. For non-edge
-   clicks, return early without stopping propagation so normal header drag works.
+- In production: Express serves the frontend's static bundle from dist/. The frontend and
+  backend share the same origin, so relative /v1 URLs go directly to Express — no proxy
+  or BACKEND_URL needed.
 
-2. Track the cursor in onMouseMove on the outer div (bubble phase). Because events bubble
-   up from children, this single handler covers the whole frame surface. Never use React
-   state for the cursor — it causes re-renders that break active drag operations. Instead,
-   write directly to outer.style.cursor.
-
-3. Use a draggingRef (useRef(false)) to freeze cursor updates during an active drag or
-   resize. At the start of any drag/resize, set draggingRef.current = true; in the mouseup
-   cleanup, set it back to false. In onMouseMove, return early if draggingRef.current is true.
-
-4. Set document.body.style.cursor at the start of a drag/resize to lock the cursor globally.
-   This prevents child elements (Monaco editor, AG Grid, etc.) from overriding it mid-drag.
-   Clear it in the mouseup cleanup.
-
-5. All four edges (top, bottom, left, right, and corners) resize the frame. Left and top
-   resize must also adjust the frame's left/top position to keep the opposite edge fixed.
-
-6. The header drag handler goes on the header child div as onMouseDown (bubble phase). It is
-   only reached for non-edge clicks because the capture handler on the outer div stops
-   propagation for edge clicks.
-
-7. The header buttons container should have onMouseDown={e => e.stopPropagation()} so that
-   clicking a button does not start a header drag.
 
 `

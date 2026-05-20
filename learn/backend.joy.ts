@@ -13,26 +13,50 @@ The backend uses:
 - Node
 - Typescript
 
-The backend repo contains a startup script that reads a configuration file from the filesystem,
-assigns environment variables, and then starts the express server.
+The backend has a startup script (start.sh) that builds dependencies, builds the frontend,
+exports environment variables, and starts the Express server. Here is what it does, in order:
 
-Before starting the server, the startup script must build the common package by running
-'npm run build' in the lucy/common directory. The common package is a TypeScript source-only
-package and ts-node cannot resolve it unless its dist/ directory exists.
+1. Capture SCRIPT_DIR as an absolute path before any cd commands:
+       SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+   Always use $SCRIPT_DIR for subsequent path references. Never re-derive the script
+   directory after a cd — $(dirname "$0") will resolve relative to the changed directory.
 
-The startup script must capture its own directory as an absolute path before any cd commands:
+2. Build the common package (ts-node cannot resolve it otherwise):
+       cd "$SCRIPT_DIR/../common" && npm run build
 
-    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+3. Build the frames package:
+       cd "$SCRIPT_DIR/../frames" && npm run build
 
-Then use $SCRIPT_DIR for all subsequent path references. If you use $(dirname "$0") lazily
-after a cd, it resolves relative to the changed directory and points to the wrong place.
+4. Select config files based on OS:
+   - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json
+   - Linux:  /mount/lucy-config/FrontendProdConfig.json and /mount/lucy-config/BackendProdConfig.json
+
+5. Export Vite environment variables from the frontend config, then build the frontend.
+   Vite bakes these values into the JS bundle at build time, so they must be set before
+   the build runs:
+       export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
+       export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
+       cd "$SCRIPT_DIR/../frontend" && npm run build
+
+6. cd back to SCRIPT_DIR, then export backend environment variables from the backend config:
+       export COGNITO_REGION=...
+       export COGNITO_USER_POOL_ID=...
+       export GOOGLE_API_KEY=...
+       export MOUNT_DIR=...
+       export ORIGIN=...
+       export REDIS_HOST=...
+       export REDIS_PORT=...
+
+7. Start the server:
+       npx ts-node "$SCRIPT_DIR/src/server.ts"
 
 The startup checks where it is running.
 If running on MacOS, it reads the file ~/lucy-config/BackendLocalConfig.json.
-If running on Linux,  it reads the file ~/lucy-config/BackendProdConfig.json.
+If running on Linux,  it reads the file /mount/lucy-config/BackendProdConfig.json.
 
-Both files contains a single json object with thse properties:
+Both files contains a single json object with these properties:
 
+- COGNITO_CLIENT_ID
 - COGNITO_REGION
 - COGNITO_USER_POOL_ID
 - GOOGLE_API_KEY
