@@ -16,6 +16,10 @@ Lucy mono-repo.
 We expect to publish the Applets package to NPM at some point, so the project structure reflects
 that decision.
 
+In package.json, react and react-dom go in peerDependencies.  @types/react and @types/react-dom
+go in dependencies (NOT devDependencies) because this package is built in production environments
+where devDependencies are not installed, and the type declarations are required at build time.
+
 The Applets package exports functions setCanvas, addApplet, and removeApplet.
 
 The Applets package exports Frame -- a react component (more below).
