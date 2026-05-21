@@ -60,7 +60,7 @@ delete-workbook endpoint.  It uses the response to refresh the grid.
 The "Download workbook" option stringifies the workbook with an indent of four,
 and downloads it as workbook.lucy.
 
-The "Open workbook" calls canvas.addFrame to add the WorkbookApplet.
+The "Open workbook" calls addApplet to add the WorkbookApplet.
 The selected workbook name is passed as a prop to the WorkbookApplet.
 
 The frame has these three FrameHeaderButtonComponents right-aligned in the header:
@@ -80,7 +80,7 @@ The frame has these three FrameHeaderButtonComponents right-aligned in the heade
 {
     icon: ButtonIcons.x
     toolTipLabel: 'Close'
-    Handler: Call Canvas.removeFrame
+    Handler: Call removeApplet
 }
 
 The surrounding frame has the string 'Workbooks' left-aligned in the header.

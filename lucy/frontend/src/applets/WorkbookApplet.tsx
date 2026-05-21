@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps, canvas } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/joy-applets'
 import { WorkbookProvider } from '../WorkbookContext'
 import { WorkbookType, PicType, PromptType } from '@billdestein/joy-common'
 import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
@@ -41,7 +40,7 @@ function emptyWorkbook(name: string): WorkbookType {
     return { createdAt: Date.now(), focusedPicFilename: 'empty', pics: [emptyPic], prompts: [emptyPrompt], workbookName: name }
 }
 
-export default function WorkbookApplet(props: FrameProps) {
+export default function WorkbookApplet(props: AppletProps) {
     const { workbookName } = props.message as Message
     const [workbook, setWorkbook] = useState<WorkbookType>(emptyWorkbook(workbookName))
     const [isLoading, setIsLoading] = useState(false)
@@ -109,7 +108,7 @@ export default function WorkbookApplet(props: FrameProps) {
     }
 
     function cloneHandler() {
-        canvas.addFrame(PromptApplet, {
+        addApplet(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -126,7 +125,7 @@ export default function WorkbookApplet(props: FrameProps) {
     }
 
     function uploadHandler() {
-        canvas.addFrame(UploadPicApplet, {
+        addApplet(UploadPicApplet, {
             isModal: true,
             message: {
                 workbookName,
@@ -143,7 +142,7 @@ export default function WorkbookApplet(props: FrameProps) {
         <>
             <FrameHeaderButtonComponent icon={ButtonIcons.faRegCopy} handler={cloneHandler} tooltipLabel="Clone Workbook" />
             <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={uploadHandler} tooltipLabel="Upload Image" />
-            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => canvas.removeFrame(props.frameId)} tooltipLabel="Close" />
+            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(props.frameId)} tooltipLabel="Close" />
         </>
     )
 

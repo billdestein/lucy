@@ -24,8 +24,8 @@ exports environment variables, and starts the Express server. Here is what it do
 2. Build the common package (ts-node cannot resolve it otherwise):
        cd "$SCRIPT_DIR/../common" && npm run build
 
-3. Build the frames package:
-       cd "$SCRIPT_DIR/../frames" && npm run build
+3. Build the applets package:
+       cd "$SCRIPT_DIR/../applets" && npm run build
 
 4. Select config files based on OS:
    - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json
@@ -173,26 +173,29 @@ Endpoint: /v1/workbooks/delete-workbook (POST)
 
 Endpoint: /v1/workbooks/generate-pic (POST)
   - Input:
-    - imageFilename: string
+    - referencedPics: PicType[]
+    - outputFilename: string
     - workbook: WorkbookType
   - Processing:
+    - referencedPics is currently unused.  It will be used when multi-modal prompts are implemented.
     - Find the focused PromptType in workbook.prompts; strip comment and command lines; use remaining text as promptText.
     - Check workbook.focusedPicFilename:
       - If 'empty' (or missing): call ai.models.generateImages with model imagen-4.0-generate-001
         and promptText. This is text-to-image generation.
+        Get the raw bytes from generatedImages[0].image.imageBytes.
       - Otherwise: read the source pic file from disk, base64-encode it, and call
         ai.models.generateContent with model gemini-2.5-flash-image,
         passing contents as a flat array of parts (NOT wrapped in a role object):
         [{ inlineData: { data: sourceBytes, mimeType } }, { text: promptText }].
         No config block (no responseModalities needed).
         Extract the result from response.candidates[0].content.parts — find the part with inlineData.
+        Get the raw bytes from that part's inlineData.data.
         This is image mutation and works with a standard Google API key.
     - Wrap the API call in try/catch; on error, log and return status 500 with the error message.
-    - Get encodedImage from the response (generatedImages[0].image.imageBytes).
-    - Write the raw bytes to imageFilename in the workbook directory.
+    - Write the raw bytes to outputFilename in the workbook directory.
     - Create a PicType for the new pic (mimeType: 'image/png').
     - Append the new PicType to workbook.pics.
-    - Set workbook.focusedPicFilename to imageFilename.
+    - Set workbook.focusedPicFilename to outputFilename.
     - Save and return the updated workbook.
   - Output
     - workbook

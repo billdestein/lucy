@@ -17,7 +17,7 @@ On file selection (Finder drag or Browse):
   - Read the file with FileReader as a data URL.
   - Extract the base64 imageData (everything after the comma in the data URL).
   - POST to /v1/workbooks/upload-pic with { workbookName, imageFilename: file.name, imageData, mimeType: file.type }.
-  - On success: call onUploaded(returnedWorkbook) and close the panel via canvas.removeFrame.
+  - On success: call onUploaded(returnedWorkbook) and close the panel via removeApplet.
   - On error: display the error message in the viewport.
 
 On URL drag (e.g. image dragged from Chrome):

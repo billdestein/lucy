@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import { canvas } from '@bill-destein/react-better-frames'
+import { addApplet } from '@billdestein/joy-applets'
 import ZoomApplet from '../applets/ZoomApplet'
 
 export default function ViewerComponent() {
@@ -42,7 +42,7 @@ export default function ViewerComponent() {
     function zoomImage() {
         dismiss()
         if (!pic) return
-        canvas.addFrame(ZoomApplet, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
+        addApplet(ZoomApplet, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
     }
 
     return (

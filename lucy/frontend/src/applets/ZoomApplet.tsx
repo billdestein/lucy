@@ -1,13 +1,12 @@
 import React from 'react'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps } from '@billdestein/joy-applets'
 
 type Message = {
     encodedImage: string
     mimeType: string
 }
 
-export default function ZoomApplet(props: FrameProps) {
+export default function ZoomApplet(props: AppletProps) {
     const { encodedImage, mimeType } = props.message as Message
 
     return (

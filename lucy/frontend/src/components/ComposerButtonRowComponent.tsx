@@ -4,7 +4,7 @@ import ComposerButtonComponent from './ComposerButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend, hydrateFromBackend } from '../workbookProtocol'
 import { getOutputFilename } from '../promptProtocol'
-import { canvas } from '@bill-destein/react-better-frames'
+import { addApplet } from '@billdestein/joy-applets'
 import PromptApplet from '../applets/PromptApplet'
 import { WorkbookType } from '@billdestein/joy-common'
 
@@ -29,7 +29,7 @@ export default function ComposerButtonRowComponent({ editorText }: Props) {
         setWorkbook({ ...workbook, prompts })
     }
 
-    async function runPrompt(imageFilename: string) {
+    async function runPrompt(outputFilename: string) {
         const updatedPrompts = workbook.prompts.map((p, i) =>
             i === focusedIndex ? { ...p, text: editorText } : p
         )
@@ -41,7 +41,7 @@ export default function ComposerButtonRowComponent({ editorText }: Props) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ imageFilename, workbook: stripForBackend(wbToSend) }),
+                body: JSON.stringify({ referencedPics: [], outputFilename, workbook: stripForBackend(wbToSend) }),
             })
             if (!res.ok) {
                 const err = await res.json()
@@ -68,7 +68,7 @@ export default function ComposerButtonRowComponent({ editorText }: Props) {
         if (filename) {
             runPrompt(filename)
         } else {
-            canvas.addFrame(PromptApplet, {
+            addApplet(PromptApplet, {
                 isModal: true,
                 message: {
                     prompt: 'Enter a filename for the generated image:',

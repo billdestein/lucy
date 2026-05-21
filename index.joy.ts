@@ -1,6 +1,7 @@
 import { joyExecute as execute } from './learn/language.joy.ts'
 import { joyLearn as learn } from './learn/language.joy.ts'
 
+import { applets } from './learn/applets.joy.ts'
 import { architecture } from './learn/architecture.joy.ts'
 import { backend } from './learn/backend.joy.ts'
 import { buttonIcons } from './learn/buttonIcons.joy.ts'
@@ -10,6 +11,7 @@ import { composerButtonComponent } from './learn/composerButtonComponent.joy.ts'
 import { composerButtonRowComponent } from './learn/composerButtonRowComponent.joy.ts'
 import { composerComponent } from './learn/composerComponent.joy.ts'
 import { composerEditorComponent } from './learn/composerEditorComponent.joy.ts'
+import { demoApplet } from './learn/demoApplet.joy.ts'
 import { frameHeaderButtonComponent } from './learn/frameHeaderButtonComponent.joy.ts'
 import { frontend } from './learn/frontend.joy.ts'
 import { mainMenuComponent } from './learn/mainMenu.joy.ts'
@@ -20,30 +22,13 @@ import { promptProtocol } from './learn/promptProtocol.joy.ts'
 import { uploadPicApplet } from './learn/uploadPicApplet.joy.ts'
 import { uploadWorkbookApplet } from './learn/uploadWorkbookApplet.joy.ts'
 import { viewerComponent } from './learn/viewerComponent.joy.ts'
-import { windows } from './learn/windows.joy.ts'
 import { workbookApplet } from './learn/workbookApplet.joy.ts'
 import { workbookProtocol } from './learn/workbookProtocol.joy.ts'
 import { workbookListApplet } from './learn/workbookListApplet.joy.ts'
 import { zoomApplet } from './learn/zoomApplet.joy.ts'
 
-execute(`
-    We're just going to generate code.
-    Do not start the backend server.
-    Do not start the frontend server.
-    If there is no lucy directory, create it.
-`)
 
-execute(`
-    Let's try to stick with this workflox:
-    - I express a concern or make a request
-    - You modify the output code (not the prompts) allowing me to preview 
-      your change to the product behavior or appearance.
-    - If I like the preview, I will ask you to show me the changes to the
-      prompts needed to reproduce the new output code in subsequent generations.
-      This is a preview of the prompts.
-    - If I like the prompts, I will tell you to apply your changes to the prompts
-`)
-
+learn(applets)
 
 learn(architecture)
 
@@ -62,6 +47,8 @@ learn(composerButtonRowComponent)
 learn(composerComponent)
 
 learn(composerEditorComponent)
+
+learn(demoApplet)
 
 learn(frameHeaderButtonComponent)
 
@@ -83,8 +70,6 @@ learn(uploadWorkbookApplet)
 
 learn(viewerComponent)
 
-learn(windows)
-
 learn(workbookApplet)
 
 learn(workbookProtocol)
@@ -94,9 +79,42 @@ learn(workbookListApplet)
 learn(zoomApplet)
 
 execute(`
-    before proceeding, let me know if everything makes sense and if you have enough details to build:
 
-    - the backend repo, 
-    - the common repo, 
-    - the frontend repo
+The goal of this project is to create a set of prompts that can be run as a group to produce a chatbot
+named Lucy.  We want Lucy to be 100% generated code.
+
+It's the prompts that we ultimately care about.  When we make a bug fix, it's important
+that we make a corresponding fix to the prompts to ensure that the bug does not resurface in
+a future generation.
+
+We're just going to generate code.
+
+Do not run npm install
+
+Do not start the backend server.
+
+Do not start the frontend server.
+
+If there is no lucy directory, create it.
+
+After reading all of the prompts from the learn directory, and before building anything, tell me:
+    - Do the prompts make sense?
+    - Are there inconsiistencies?
+    - Are there ambiguities?
+    - Do you have sufficient detail to build the common, backend, applets and frontend repos?
+
+Ask permission before proceeding with build steps.
+
+When I tell you to build something, that includes running tslint to find and fix
+compile-time errors.
+
+Build the common repo
+
+Build the backend repo
+
+Build the applets repo
+
+Build the frontend repo
+
 `)
+

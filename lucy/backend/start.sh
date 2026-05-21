@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/../common"
 npm run build
 
-cd "$SCRIPT_DIR/../frames"
+cd "$SCRIPT_DIR/../applets"
 npm run build
 
 if [[ "$(uname)" == "Darwin" ]]; then

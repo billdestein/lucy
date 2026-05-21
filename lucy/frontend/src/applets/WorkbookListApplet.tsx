@@ -3,8 +3,7 @@ import { AgGridReact } from 'ag-grid-react'
 import { ColDef, GridApi } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps, canvas } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/joy-applets'
 import { WorkbookType } from '@billdestein/joy-common'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend } from '../workbookProtocol'
@@ -42,7 +41,7 @@ function wbToRow(wb: WorkbookType): RowData {
     }
 }
 
-export default function WorkbookListApplet(props: FrameProps) {
+export default function WorkbookListApplet(props: AppletProps) {
     const [rowData, setRowData] = useState<RowData[]>([])
     const gridApiRef = useRef<GridApi | null>(null)
     const gridContainerRef = useRef<HTMLDivElement>(null)
@@ -93,11 +92,11 @@ export default function WorkbookListApplet(props: FrameProps) {
     }, [])
 
     function openWorkbook(wb: WorkbookType) {
-        canvas.addFrame(WorkbookApplet, { message: { workbookName: wb.workbookName } })
+        addApplet(WorkbookApplet, { message: { workbookName: wb.workbookName } })
     }
 
     function cloneWorkbook(wb: WorkbookType) {
-        canvas.addFrame(PromptApplet, {
+        addApplet(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
@@ -135,7 +134,7 @@ export default function WorkbookListApplet(props: FrameProps) {
     }
 
     function addWorkbook() {
-        canvas.addFrame(PromptApplet, {
+        addApplet(PromptApplet, {
             isModal: true,
             message: {
                 prompt: 'Enter a name for your new workbook:',
@@ -157,10 +156,10 @@ export default function WorkbookListApplet(props: FrameProps) {
             <FrameHeaderButtonComponent icon={ButtonIcons.plus} handler={addWorkbook} tooltipLabel="New Workbook" />
             <FrameHeaderButtonComponent
                 icon={ButtonIcons.upload}
-                handler={() => canvas.addFrame(UploadWorkbookApplet, { message: { onComplete: loadWorkbooks } })}
+                handler={() => addApplet(UploadWorkbookApplet, { message: { onComplete: loadWorkbooks } })}
                 tooltipLabel="Upload Workbook"
             />
-            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => canvas.removeFrame(props.frameId)} tooltipLabel="Close" />
+            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(props.frameId)} tooltipLabel="Close" />
         </>
     )
 

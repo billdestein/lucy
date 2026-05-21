@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { getIdToken, handleCallback, signIn } from './auth'
-import { canvas } from '@bill-destein/react-better-frames'
+import { setCanvas, addApplet } from '@billdestein/joy-applets'
 import MainMenuComponent from './components/MainMenuComponent'
 import WorkbookListApplet from './applets/WorkbookListApplet'
 
@@ -48,8 +48,8 @@ export default function App() {
     useEffect(() => {
         if (idToken && canvasRef.current && !canvasInitialized.current) {
             canvasInitialized.current = true
-            canvas.setCanvas(canvasRef.current)
-            canvas.addFrame(WorkbookListApplet, {})
+            setCanvas(canvasRef.current)
+            addApplet(WorkbookListApplet, {})
         }
     }, [idToken])
 

@@ -1,9 +1,9 @@
 //----------------------------------------------------------------------------------------------------
-// demoFrame
+// demoApplet
 //----------------------------------------------------------------------------------------------------
-export const demoFrame = `
+export const demoApplet = `
 
-The DemoFrame is a React component.
+The DemoApplet is a React component.
 
 The initial frame dimensions are 1112 x 625.
 

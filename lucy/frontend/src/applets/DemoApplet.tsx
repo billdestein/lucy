@@ -1,10 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps } from '@billdestein/joy-applets'
 
 const VIDEO_RATIO = 1112 / 625
 
-export default function DemoApplet(props: FrameProps) {
+export default function DemoApplet(props: AppletProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [dims, setDims] = useState({ width: 0, height: 0 })
 

@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps, canvas } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
 import { WorkbookType } from '@billdestein/joy-common'
 import { ButtonIcons } from '../ButtonIcons'
 
@@ -9,7 +8,7 @@ type Message = {
     onUploaded: (workbook: WorkbookType) => void
 }
 
-export default function UploadPicApplet(props: FrameProps) {
+export default function UploadPicApplet(props: AppletProps) {
     const { workbookName, onUploaded } = props.message as Message
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
@@ -35,7 +34,7 @@ export default function UploadPicApplet(props: FrameProps) {
             if (!res.ok) throw new Error((await res.json()).error)
             const data = await res.json()
             onUploaded(data.workbook)
-            canvas.removeFrame(props.frameId)
+            removeApplet(props.frameId)
         } catch (err) {
             setError(String(err))
         } finally {
@@ -57,7 +56,7 @@ export default function UploadPicApplet(props: FrameProps) {
             if (!res.ok) throw new Error((await res.json()).error)
             const data = await res.json()
             onUploaded(data.workbook)
-            canvas.removeFrame(props.frameId)
+            removeApplet(props.frameId)
         } catch (err) {
             setError(String(err))
         } finally {

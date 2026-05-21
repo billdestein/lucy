@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { Frame } from '@bill-destein/react-better-frames'
-import { FrameProps, canvas } from '@bill-destein/react-better-frames'
+import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
 import { isValidFilename } from '../promptProtocol'
 
 type Message = {
@@ -8,7 +7,7 @@ type Message = {
     onOk: (value: string) => void
 }
 
-export default function PromptApplet(props: FrameProps) {
+export default function PromptApplet(props: AppletProps) {
     const { frameId, prompt, onOk } = { ...props, ...(props.message as Message) }
     const [text, setText] = useState('')
     const [error, setError] = useState('')
@@ -19,11 +18,11 @@ export default function PromptApplet(props: FrameProps) {
             return
         }
         onOk(text)
-        canvas.removeFrame(frameId)
+        removeApplet(frameId)
     }
 
     function handleCancel() {
-        canvas.removeFrame(frameId)
+        removeApplet(frameId)
     }
 
     return (

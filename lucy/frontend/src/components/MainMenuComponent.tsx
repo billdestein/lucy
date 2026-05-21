@@ -1,5 +1,5 @@
 import React from 'react'
-import { canvas } from '@bill-destein/react-better-frames'
+import { addApplet } from '@billdestein/joy-applets'
 import DemoApplet from '../applets/DemoApplet'
 import WorkbookListApplet from '../applets/WorkbookListApplet'
 import { signOut } from '../auth'
@@ -20,8 +20,8 @@ export default function MainMenuComponent() {
             }}
         >
             <div style={{ display: 'flex', gap: 4 }}>
-                <button onClick={() => canvas.addFrame(DemoApplet, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
-                <button onClick={() => canvas.addFrame(WorkbookListApplet, {})} style={menuButtonStyle}>Workbooks</button>
+                <button onClick={() => addApplet(DemoApplet, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
+                <button onClick={() => addApplet(WorkbookListApplet, {})} style={menuButtonStyle}>Workbooks</button>
             </div>
             <button onClick={signOut} style={menuButtonStyle}>Sign Out</button>
         </div>

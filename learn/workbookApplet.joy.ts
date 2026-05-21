@@ -36,7 +36,7 @@ The frame header has these FrameHeaderButtonComponents (left to right):
 {
     icon: ButtonIcons.upload
     toolTipLabel: 'Upload Image'
-    Handler: Call Canvas.addFrame UploadPicApplet, passing message:
+    Handler: Call addApplet UploadPicApplet, passing message:
         { workbookName, onUploaded }
     onUploaded calls hydrateFromBackend on the returned workbook, then
     calls setWorkbook and setSelectedPicFilename(hydrated.focusedPicFilename ?? 'empty').
@@ -45,7 +45,7 @@ The frame header has these FrameHeaderButtonComponents (left to right):
 {
     icon: ButtonIcons.x
     toolTipLabel: 'Close'
-    Handler: Call Canvas.removeFrame
+    Handler: Call removeApplet
 }
 
 The frame viewport is split into two panes, left and right, by a five-pixel slider.
