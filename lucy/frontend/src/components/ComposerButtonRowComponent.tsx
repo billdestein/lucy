@@ -15,7 +15,7 @@ export default function ComposerButtonRowComponent({ editorText }: Props) {
 
     const focusedIndex = workbook.prompts.findIndex(p => p.focused)
     const count = workbook.prompts.length
-    const displayIndex = focusedIndex >= 0 ? focusedIndex + 1 : 0
+    const displayIndex = focusedIndex >= 0 ? focusedIndex + 1 : 1
 
     function previousButtonHandler() {
         if (focusedIndex <= 0) return

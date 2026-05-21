@@ -30,7 +30,7 @@ The next button is:
 }
 
 {index} is one plus the index of the currently visible (focused) prompt within the workbook's
-prompts.
+prompts.  If no prompt is focused, {index} defaults to 1.
 
 {count} is the number of prompts in the workbook's prompts array.
 
