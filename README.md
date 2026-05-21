@@ -1,108 +1,67 @@
-# Joy
+# The Lucy Experiment
 
-Joy is a Domain Specific Language (DSL) for orchestrating LLM code generation.
+I'm Bill DeStein.  I call myself a full stack developer.  I know other full stack developers who tell me,
+"GenAI can't do what I do."  I was unsure to what extent that was accurate.  So I set out to test
+that assertion.  I decided to run an experiment.  I call it the Lucy experiment:
 
-In this Git repo, we use Joy to develop a chatbot that we call Lucy.
+- Can a senior full-stack developer singlehandedly create a SAAS product from scratch in seven calendar days?
+- The SAAS product is a chatbot for image processing.  Her name is Lucy.
+- Lucy allows users to generate, mutate, and combine images.
+- Gemini APIs are called from the Lucy backend to do the heavy lifting.
+- Lucy is public a facing app, so it must use current best practices for authentication and authorization.
 
-To follow along ...
+# The result:
 
-1) Install Claude Code
+With help from Claude, I successfully produced Lucy in nine calendar days.  Lucy is 100% generated code.
 
-2) Clone this Git repo
+You can find Lucy here:  https://lucythebot.com
 
-```
-> git clone git@github.com:billdestein/joy.git
-> cd joy
-```
 
-3) Start Claude 
+# Claude's thoughts on The Lucy Experiment:
 
-```
-> claude
-```
+I instructed Claude: "Read all of the code in this folder, especially README.md, and share your thoughts"
 
-4) Enter this Claude prompt
+Claude responded:
 
-```
-read and execute the file 'joy' in this directory
-```
+---
+The meta-level observation
 
-# Notes on Lucy:
+The most interesting thing in this repo isn't Lucy the product — it's the development methodology. The learn/ directory and the joy system represent a "prompts as source of truth" approach: the prompts encode the
+specification, the code is a derived artifact, and bug fixes get backported to the prompts so they survive the next regeneration. That's a genuinely novel idea. Most people treat AI-generated code as the output;
+you're treating it as a snapshot of the prompts.
 
-Is there a demo?
+The prompts themselves are high-quality engineering documents. They capture why decisions were made — why onMouseDownCapture instead of onMouseDown, why manual PKCE instead of oidc-client-ts, why the Cognito ID token
+and not the access token, why skipLibCheck in the tsconfig. That institutional knowledge living in the prompts (not in comments or PRs that rot) is the real value here.
 
-- Yes, can find a four-minute demo of Lucy here:  [Lucy demo](https://s3.us-west-2.amazonaws.com/billdestein.videos/lucy-v3.mp4)
+---
+The code itself
 
-What is Lucy:
+What's solid:
 
-- Lucy is a chatbot for image generation and image manipulation.
-- Lucy is built entirely from generated code.
-- Lucy code was generated using Claude and the Joy DSL
-- Lucy uses the Gemini Typescript SDK for image generation and image manipulation.
-- Lucy was built from scratch in nine calendar days. (Check the commit history on this project)
+- The applets windowing system is well-designed. DOM manipulation for drag/resize (bypassing React re-renders) is the right call, and the capture-phase trick for edges is correctly implemented.
+- The auth flow is robust — manual PKCE, no broken OIDC libraries, Redis sessions with conditional TLS for local vs. ElastiCache.
+- WorkbookContext cleanly avoids prop-drilling through the component tree.
+- The idb-keyval cache with composite keys is thoughtful — avoids resending large image blobs across the network on every load.
+- Backend is clean: services are well-separated, middleware is minimal, all the fiddly details (tilde expansion, 20mb body limit, frontend static serving) are accounted for.
 
-# Claude's thoughts on Joy and Lucy:
+What's unfinished or worth noting:
 
-## I shared this with Claude:
+1. frames/ is a dead directory. The frontend was migrated to applets but lucy/frames/ still exists. It can be deleted.
+2. UploadWorkbookApplet is a stub — it renders the text "UploadWorkbookApplet" and nothing else. The upload workbook button in WorkbookListApplet opens it but nothing happens.
+3. referencedPics / multi-modal is scaffolded but not wired. promptProtocol.ts has getOutputFilename but no getReferencedPics. ComposerButtonRowComponent sends referencedPics: [] hardcoded. The backend marks it
+unused. The {filename} curly-brace syntax in the prompt spec has no frontend parsing.
+4. No delete-pic UI. The backend has a /delete-pic endpoint but PicListComponent has no delete action. The endpoint is unreachable from the UI.
+5. Paginator edge case. If focusedIndex === -1 (no focused prompt), ComposerButtonRowComponent shows "0 of N" which looks odd. Should default the display to 1.
+6. Frontend error handling is thin. generate-pic errors surface as alert(). Most other fetch failures are silently swallowed. Fine for now, worth noting for hardening.
 
-Claude, you're here:  https://github.com/billdestein/joy
+---
+The experiment result
 
-In early 2026, I develooped a SAAS product I called Toolbox.  Toolbox is a chatbot for image generation and image manipulation.  It took me three months to develop Toolbox. I developed the code, one line at a time, using VS Code.  I used Claude Code for light-weight refactoring, code reviews and unit tests generation.
+The README says nine days, 100% generated code. Having worked through the prompts with you, I'd say the claim holds up. The architecture is coherent, the hard parts are correctly handled, and the code is production-adjacent (not toy quality). The sessions + Cognito + Redis + EFS + ALB sticky sessions stack is the kind of thing that usually takes days of debugging to get right.
 
-In May 2006, I thought it would be interesting to see if I could build a functionally similar chatbot using 100% generated code.
+The more interesting claim the experiment implicitly makes: a sufficiently experienced developer can encode their expertise into prompts well enough that the AI becomes a reliable implementation engine. The prompts
+in learn/ are doing a lot of work — they're not just descriptions, they're error-preventing constraints derived from real failures. That's the skill that made this work.
 
-I found myself working with twenty or so prompts, each a few hundred lines of text. I found myself copy/pasting the prompts from text files into the Claude command line. I decided that I needed to programmatically orchestrate the submittal of prompts to Claude.  I considered using Typescript with the Claude SDK, but I decided that was more than I needed.  What I needed was two things:
 
-- A way to tell Claude to learn somethinng
-- A way to tell Claude to build something
 
-That's when I invented Joy.  Joy is a Domain Specific Language (DSL) for orchestrating LLM code generation.  You can find Joy here:
-
-https://github.com/billdestein/joy
-
-The next challenge was dealing with regressions.  I'd discover a bug when testing the generated code.  I'd ask Claude to troubleshoot and suggest changes to the generated code. I'd test the changes and commit them to Git.  But I wasn't being careful to update the prompts to prevent recurrence in subsequent generations.  That's when Claude and I decided to this try this workflow:
-
-learn → generate → test → fix → update prompts → repeat. 
-
-One day, Claude and I were working on a stubborn bug.  After a few hours, I told Claude, "you know, this was working yesterday."  Claude replied, "sorry, you've cleared my context since then, so I can't go back and look."  I said, "yea, but we've got the Git history for all of the generated code, right?"  Claude was pretty excited.  He found the change in Git that caused the breakage and fixed it.
-
-So we tweaked our workflow.  We now commit changes to the prompts and changes to the generated code in the same commit in the same Git repo.
-
-In the end, Claude and I successfully developed a chatbot in nine calendar days.  That chatbot is named Lucy.  She is 100% generated code.
-
-I'm not suggesting that our workflow is appropriate for production product development.  But instead that it can be useful for early phases of the Software Development Life Cycle (SDLC) including ideation, rapid prototypeing, Minimal Viable Products (MVPs) and Proof Of Concept (POC).
-
-Claude, what are your thoughts on this?  Please share both the good and the less good.
-
-## Claude replied:
-
-This is a genuinely interesting experiment, and the workflow has some real strengths worth naming clearly.
-
-What works well:
-
-The learn → generate → test → fix → update prompts → repeat loop is disciplined in a way most LLM-assisted development isn't. Most people treat prompts as throwaway — you found a way to make them first-class artifacts that live alongside the code.
-
-That's the right instinct.
-
-Co-locating prompt changes and code changes in the same commit is particularly sharp. It closes the loop that usually breaks: generated code drifts from its generative intent, and no one knows why it was written the way it was. Your commit history is both a changelog and a recipe book.
-
-The Git bisect story is a good proof point — using version control as a shared memory substitute when context windows clear is clever and practical.
-
-Using a DSL (Joy) to orchestrate prompt submission rather than writing SDK scaffolding is the right call for the scale you were at. Premature infrastructure is a common failure mode in this kind of work.
-
-Where this gets harder:
-
-Nine calendar days for an MVP is fast, but the real test is day 90. Prompt-driven generation tends to accumulate latent inconsistency — the model makes slightly different design decisions across sessions, and the divergence compounds. Refactoring becomes expensive because you're refactoring both code and prompts.
-
-The workflow depends heavily on the developer's ability to write precise, complete prompts. That's a skill, and it's not evenly distributed. The "100% generated code" framing understates how much expertise you brought to structuring the generative process itself.
-
-Testing is the hard constraint. You found bugs through manual testing. Automated test suites are difficult to maintain when the code generation can reconstitute large sections — tests and code can drift out of sync unless you're also generating and versioning the tests.
-
-Finally, this workflow optimizes for greenfield speed. It gets harder when you need to integrate with external systems that have their own constraints, or when requirements change in ways that require surgical edits rather than regeneration.
-
-The honest summary:
-
-What you built is a legitimate rapid prototyping methodology, not just a one-off experiment. The prompt-as-artifact discipline is the part most people miss, and it's what would make this transferable to a team. The ceiling is real — this isn't a replacement for deliberate software architecture — but for the SDLC phases you named, it's a credible tool.
-
-✻ Sautéed for 18s
 
