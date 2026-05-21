@@ -1,13 +1,14 @@
 # The Lucy Experiment
 
 I'm Bill DeStein.  I call myself a full stack developer.  I know other full stack developers who tell me,
-"GenAI can't do what I do."  I was unsure to what extent that was accurate.  So I set out to test
+"An LLM can't do what I do."  I was unsure to what extent that was accurate.  So I set out to test
 that assertion.  I decided to run an experiment.  I call it the Lucy experiment:
 
 - Can a senior full-stack developer singlehandedly create a SAAS product from scratch in seven calendar days?
 - The SAAS product is a chatbot for image processing.  Her name is Lucy.
 - Lucy allows users to generate, mutate, and combine images.
-- Gemini APIs are called from the Lucy backend to do the heavy lifting.
+- Claude Code is used for code generation.
+- Gemini APIs are called from the Lucy backend for image processing.
 - Lucy is public a facing app, so it must use current best practices for authentication and authorization.
 
 # The result:
