@@ -63,7 +63,6 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
         })
     }
 
-    // Horizontal splitter drag
     function onHorizMouseDown(e: React.MouseEvent) {
         e.preventDefault()
         const container = containerRef.current
@@ -84,7 +83,6 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
         document.addEventListener('mouseup', onUp)
     }
 
-    // Vertical splitter drag
     function onVertMouseDown(e: React.MouseEvent) {
         e.preventDefault()
         const container = containerRef.current
@@ -116,24 +114,20 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
             </>}
         >
             <div ref={containerRef} style={{ display: 'flex', width: '100%', height: '100%' }}>
-                {/* Left pane */}
                 <div style={{ width: `${leftPct}%`, overflow: 'hidden' }}>
                     <PicListComponent />
                 </div>
 
-                {/* Horizontal splitter */}
                 <div
                     onMouseDown={onHorizMouseDown}
                     style={{ width: 5, background: '#444', cursor: 'col-resize', flexShrink: 0 }}
                 />
 
-                {/* Right pane */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div style={{ height: `${topPct}%`, overflow: 'hidden' }}>
                         <ViewerComponent />
                     </div>
 
-                    {/* Vertical splitter */}
                     <div
                         onMouseDown={onVertMouseDown}
                         style={{ height: 5, background: '#444', cursor: 'row-resize', flexShrink: 0 }}

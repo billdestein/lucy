@@ -54,7 +54,7 @@ export function App() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
             }}>
-                <span style={{ color: 'gold', fontSize: 48, fontFamily: 'sans-serif', fontWeight: 'bold' }}>
+                <span style={{ color: 'gold', fontSize: 100, fontFamily: 'Great Vibes' }}>
                     Lucy
                 </span>
                 <button

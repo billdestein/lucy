@@ -42,7 +42,7 @@ export function ComposerButtonRowComponent({ editorText }: Props) {
             ),
         }
 
-        const { referencedPics, outputFilename: cmdFilename, promptText: _ } = preparePrompt(wbWithText)
+        const { referencedPics, outputFilename: cmdFilename } = preparePrompt(wbWithText)
 
         async function doGenerate(outputFilename: string) {
             setIsLoading(true)
@@ -98,7 +98,6 @@ export function ComposerButtonRowComponent({ editorText }: Props) {
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '4px 8px', background: '#252526', flexShrink: 0, height: 36,
         }}>
-            {/* Paginator */}
             <div style={{ flex: 1 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#ccc', fontSize: 13, fontFamily: 'sans-serif' }}>
                 <ComposerButtonComponent

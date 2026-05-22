@@ -22,10 +22,10 @@ exports environment variables, and starts the Express server. Here is what it do
    directory after a cd — $(dirname "$0") will resolve relative to the changed directory.
 
 2. Build the common package (ts-node cannot resolve it otherwise):
-       cd "$SCRIPT_DIR/../common" && npm run build
+       cd "$SCRIPT_DIR/../common" && npm install --omit=dev && npm run build
 
 3. Build the applets package:
-       cd "$SCRIPT_DIR/../applets" && npm run build
+       cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
 
 4. Select config files based on OS:
    - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json

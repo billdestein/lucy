@@ -25,6 +25,11 @@ The tsconfig.json must use "module": "ES2020" (not "commonjs"). Vite uses Rollup
 the frontend, and Rollup cannot statically analyze CommonJS re-exports produced by tsc.
 ESM output avoids this problem entirely.
 
+The tsconfig.json must also explicitly set "moduleResolution": "node". The default
+moduleResolution for "module": "ES2020" is "classic", which cannot find npm packages
+like react. This causes type errors on clean Linux installs (EC2) even though macOS
+may mask the problem via npm caching or hoisting.
+
 The Applets package exports functions setCanvas, addApplet, and removeApplet.
 
 The Applets package exports Frame -- a react component (more below).

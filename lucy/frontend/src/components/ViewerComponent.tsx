@@ -11,7 +11,6 @@ export function ViewerComponent() {
         ?? workbook.pics[workbook.pics.length - 1]
 
     const hasImage = pic && pic.encodedImage && pic.mimeType
-
     const imgSrc = hasImage ? `data:${pic.mimeType};base64,${pic.encodedImage}` : null
 
     function handleContextMenu(e: React.MouseEvent) {

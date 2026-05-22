@@ -4,10 +4,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Build common
-cd "$SCRIPT_DIR/../common" && npm run build
+cd "$SCRIPT_DIR/../common" && npm install --omit=dev && npm run build
 
 # Build applets
-cd "$SCRIPT_DIR/../applets" && npm run build
+cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
 
 # Select config files based on OS
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -21,7 +21,7 @@ fi
 # Export Vite variables and build frontend
 export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
 export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
-cd "$SCRIPT_DIR/../frontend" && npm run build
+cd "$SCRIPT_DIR/../frontend" && npm install && npm run build
 
 # Export backend environment variables
 cd "$SCRIPT_DIR"
