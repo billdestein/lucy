@@ -1,38 +1,47 @@
-import express, { Request, Response } from 'express'
+import express from 'express'
 import cookieParser from 'cookie-parser'
-import cors from 'cors'
-import fs from 'fs'
 import path from 'path'
+import fs from 'fs'
 import { config } from './config'
-import { connectRedis } from './services/redis'
-import authRouter from './routes/auth'
-import healthRouter from './routes/health'
-import workbooksRouter from './routes/workbooks'
+import { redisClient } from './services/redis'
+import { authRouter } from './routes/auth'
+import { healthRouter } from './routes/health'
+import { workbooksRouter } from './routes/workbooks'
 
 const app = express()
 
-app.use(cors({ origin: config.origin, credentials: true }))
 app.use(express.json({ limit: '20mb' }))
 app.use(cookieParser())
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', config.ORIGIN)
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    if (req.method === 'OPTIONS') { res.sendStatus(204); return }
+    next()
+})
 
 app.use('/v1/auth', authRouter)
 app.use('/v1/health', healthRouter)
 app.use('/v1/workbooks', workbooksRouter)
 
-const distDir = path.join(__dirname, '../../frontend/dist')
-app.use(express.static(distDir))
-app.get('*', (_req: Request, res: Response) => {
-    res.sendFile(path.join(distDir, 'index.html'))
-})
-
-async function main() {
-    await connectRedis()
-
-    fs.mkdirSync(path.join(config.mountDir, 'users'), { recursive: true })
-
-    app.listen(8080, () => {
-        console.log('Backend listening on port 8080')
+const frontendDist = path.join(__dirname, '../../frontend/dist')
+if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist))
+    app.get('*', (_req, res) => {
+        res.sendFile(path.join(frontendDist, 'index.html'))
     })
 }
 
-main().catch(console.error)
+async function start() {
+    const usersDir = path.join(config.MOUNT_DIR, 'users')
+    fs.mkdirSync(usersDir, { recursive: true })
+
+    await redisClient.connect()
+    console.log('Redis connected')
+
+    app.listen(8080, () => console.log('Lucy backend listening on port 8080'))
+}
+
+start().catch(err => { console.error(err); process.exit(1) })

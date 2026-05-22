@@ -1,18 +1,41 @@
-import { WorkbookType } from '@billdestein/joy-common'
+import { WorkbookType, PicType } from '@billdestein/joy-common'
 
-export function getOutputFilename(promptText: string): string | null {
-    const match = promptText.match(/^--\s*save as\s+(.+)$/m)
-    return match ? match[1].trim() : null
+export type PreparedPrompt = {
+    referencedPics: PicType[]
+    outputFilename: string | null
+    promptText: string
 }
 
-export function stripPromptForBackend(text: string): string {
-    return text
-        .split('\n')
-        .filter(line => !line.trimStart().startsWith('//') && !line.trimStart().startsWith('--'))
+export function preparePrompt(workbook: WorkbookType): PreparedPrompt {
+    const focused = workbook.prompts.find(p => p.focused)
+    const text = focused?.text ?? ''
+    const lines = text.split('\n')
+
+    let outputFilename: string | null = null
+    const referencedPics: PicType[] = []
+
+    for (const line of lines) {
+        const trimmed = line.trimStart()
+        const saveMatch = trimmed.match(/^--\s*save as\s+(.+)$/i)
+        if (saveMatch) {
+            outputFilename = saveMatch[1].trim()
+            continue
+        }
+        const usingMatch = trimmed.match(/^--\s*using\s+(.+)$/i)
+        if (usingMatch) {
+            const filename = usingMatch[1].trim()
+            const pic = workbook.pics.find(p => p.filename === filename)
+            if (pic) referencedPics.push(pic)
+        }
+    }
+
+    const promptText = lines
+        .filter(line => {
+            const t = line.trimStart()
+            return !t.startsWith('//') && !t.startsWith('--')
+        })
         .join('\n')
         .trim()
-}
 
-export function isValidFilename(name: string): boolean {
-    return name.length > 0 && !/[/\0]/.test(name)
+    return { referencedPics, outputFilename, promptText }
 }

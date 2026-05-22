@@ -1,35 +1,32 @@
 import { get, set } from 'idb-keyval'
 import { WorkbookType, PicType } from '@billdestein/joy-common'
 
-function cacheKey(workbookName: string, pic: PicType): string {
-    return `/workbook.${workbookName}/pic.${pic.filename}/${pic.mimeType}/${pic.createdAt}`
-}
-
-async function fetchPic(workbookName: string, picFilename: string): Promise<string> {
-    const res = await fetch(
-        `/v1/workbooks/get-pic?workbookName=${encodeURIComponent(workbookName)}&picFilename=${encodeURIComponent(picFilename)}`,
-        { credentials: 'include' }
-    )
-    const data = await res.json()
-    return data.encodedImage as string
+function picKey(workbook: WorkbookType, pic: PicType): string {
+    return `/workbook.${workbook.workbookName}/pic.${pic.filename}/pic.${pic.mimeType}/pic.${pic.createdAt}`
 }
 
 export async function refresh(workbook: WorkbookType): Promise<WorkbookType> {
-    const updatedPics = await Promise.all(
+    const pics = await Promise.all(
         workbook.pics.map(async (pic): Promise<PicType> => {
-            if (pic.mimeType === '') return pic
-            if (pic.encodedImage !== '') return pic
+            if (pic.mimeType === '') return pic  // sentinel — no file on disk
 
-            const key = cacheKey(workbook.workbookName, pic)
-            const cached = await get<string>(key)
-            if (cached) {
-                return { ...pic, encodedImage: cached }
+            if (pic.encodedImage) {
+                await set(picKey(workbook, pic), pic.encodedImage)
+                return pic
             }
 
-            const encodedImage = await fetchPic(workbook.workbookName, pic.filename)
+            const key = picKey(workbook, pic)
+            const cached = await get<string>(key)
+            if (cached) return { ...pic, encodedImage: cached }
+
+            const res = await fetch(
+                `/v1/workbooks/get-pic?workbookName=${encodeURIComponent(workbook.workbookName)}&picFilename=${encodeURIComponent(pic.filename)}`,
+                { credentials: 'include' }
+            )
+            const { encodedImage } = await res.json() as { encodedImage: string }
             await set(key, encodedImage)
             return { ...pic, encodedImage }
         })
     )
-    return { ...workbook, pics: updatedPics }
+    return { ...workbook, pics }
 }

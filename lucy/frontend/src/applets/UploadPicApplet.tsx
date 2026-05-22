@@ -1,15 +1,14 @@
 import React, { useRef, useState } from 'react'
 import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
-import { WorkbookType } from '@billdestein/joy-common'
+import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
+import { WorkbookType } from '@billdestein/joy-common'
 
-type Message = {
-    workbookName: string
-    onUploaded: (workbook: WorkbookType) => void
-}
-
-export default function UploadPicApplet(props: AppletProps) {
-    const { workbookName, onUploaded } = props.message as Message
+export function UploadPicApplet({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+    const { workbookName, onUploaded } = message as {
+        workbookName: string
+        onUploaded: (wb: WorkbookType) => void
+    }
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState('')
@@ -18,10 +17,10 @@ export default function UploadPicApplet(props: AppletProps) {
         setUploading(true)
         setError('')
         try {
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader()
-                reader.onload = () => resolve(reader.result as string)
-                reader.onerror = reject
+            const reader = new FileReader()
+            const dataUrl = await new Promise<string>((res, rej) => {
+                reader.onload = () => res(reader.result as string)
+                reader.onerror = rej
                 reader.readAsDataURL(file)
             })
             const imageData = dataUrl.split(',')[1]
@@ -31,10 +30,10 @@ export default function UploadPicApplet(props: AppletProps) {
                 credentials: 'include',
                 body: JSON.stringify({ workbookName, imageFilename: file.name, imageData, mimeType: file.type }),
             })
-            if (!res.ok) throw new Error((await res.json()).error)
-            const data = await res.json()
-            onUploaded(data.workbook)
-            removeApplet(props.frameId)
+            if (!res.ok) throw new Error(await res.text())
+            const { workbook } = await res.json() as { workbook: WorkbookType }
+            onUploaded(workbook)
+            removeApplet(frameId)
         } catch (err) {
             setError(String(err))
         } finally {
@@ -42,21 +41,22 @@ export default function UploadPicApplet(props: AppletProps) {
         }
     }
 
-    async function uploadFromUrl(url: string) {
+    async function uploadFromUrl(imageUrl: string) {
         setUploading(true)
         setError('')
         try {
-            const lastSegment = url.split('/').pop()?.split('?')[0] ?? 'image'
+            const urlObj = new URL(imageUrl)
+            const imageFilename = urlObj.pathname.split('/').pop()?.split('?')[0] ?? 'image'
             const res = await fetch('/v1/workbooks/upload-pic-from-url', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ workbookName, imageUrl: url, imageFilename: lastSegment }),
+                body: JSON.stringify({ workbookName, imageUrl, imageFilename }),
             })
-            if (!res.ok) throw new Error((await res.json()).error)
-            const data = await res.json()
-            onUploaded(data.workbook)
-            removeApplet(props.frameId)
+            if (!res.ok) throw new Error(await res.text())
+            const { workbook } = await res.json() as { workbook: WorkbookType }
+            onUploaded(workbook)
+            removeApplet(frameId)
         } catch (err) {
             setError(String(err))
         } finally {
@@ -64,7 +64,7 @@ export default function UploadPicApplet(props: AppletProps) {
         }
     }
 
-    function onDrop(e: React.DragEvent) {
+    function handleDrop(e: React.DragEvent) {
         e.preventDefault()
         if (e.dataTransfer.files.length > 0) {
             uploadFile(e.dataTransfer.files[0])
@@ -74,60 +74,55 @@ export default function UploadPicApplet(props: AppletProps) {
         }
     }
 
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        if (file) uploadFile(file)
+    }
+
     return (
-        <Frame {...props} title="Upload Image" width={420} height={220}>
+        <Frame
+            frameId={frameId} height={height} width={width} x={x} y={y}
+            zIndex={zIndex} isModal={isModal} title="Upload Image"
+            headerButtons={
+                <FrameHeaderButtonComponent
+                    icon={ButtonIcons.x}
+                    handler={() => removeApplet(frameId)}
+                    tooltipLabel="Close"
+                />
+            }
+        >
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 <div
-                    style={{
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px dashed #444',
-                        margin: 10,
-                        borderRadius: 4,
-                        color: '#888',
-                        fontSize: 13,
-                        cursor: 'default',
-                    }}
+                    onDrop={handleDrop}
                     onDragOver={e => e.preventDefault()}
-                    onDrop={onDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                        flex: 1, display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        color: '#aaa', fontFamily: 'sans-serif', fontSize: 14,
+                        cursor: 'pointer', gap: 8,
+                    }}
                 >
-                    {uploading ? 'Uploading…' : (
+                    {uploading ? (
+                        <span>Uploading…</span>
+                    ) : (
                         <>
-                            <span style={{ fontSize: 24, marginBottom: 8 }}>{ButtonIcons.upload}</span>
+                            <span style={{ fontSize: 32 }}>↑</span>
                             <span>Drop an image or URL here</span>
+                            {error && <span style={{ color: '#f44', fontSize: 12 }}>{error}</span>}
                         </>
                     )}
-                    {error && <div style={{ color: '#f88', marginTop: 8 }}>{error}</div>}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 10px 10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '6px 8px', background: '#252526' }}>
                     <button
                         onClick={() => fileInputRef.current?.click()}
-                        style={btnStyle}
+                        style={{ background: '#3c3c3c', border: '1px solid #555', color: '#ccc', padding: '4px 12px', borderRadius: 3, fontSize: 13, cursor: 'pointer' }}
                     >
                         Browse
                     </button>
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={e => { if (e.target.files?.[0]) uploadFile(e.target.files[0]) }}
-                    />
                 </div>
+                <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
             </div>
         </Frame>
     )
-}
-
-const btnStyle: React.CSSProperties = {
-    background: '#3c3c3c',
-    border: 'none',
-    color: '#ccc',
-    padding: '4px 14px',
-    borderRadius: 3,
-    cursor: 'pointer',
-    fontSize: 13,
 }

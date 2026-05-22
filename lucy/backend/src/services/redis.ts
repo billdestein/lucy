@@ -1,25 +1,14 @@
 import { createClient } from 'redis'
 import { config } from '../config'
 
-const isLocal = config.redisHost === 'localhost' || config.redisHost === '127.0.0.1'
+const isLocal = config.REDIS_HOST === 'localhost' || config.REDIS_HOST === '127.0.0.1'
 
-const client = createClient({
+export const redisClient = createClient({
     socket: {
-        host: config.redisHost,
-        port: config.redisPort,
-        connectTimeout: 5000,
+        host: config.REDIS_HOST,
+        port: parseInt(config.REDIS_PORT, 10),
         tls: !isLocal,
     },
 })
 
-export async function connectRedis() {
-    await client.connect()
-}
-
-export async function setSession(sessionId: string, email: string) {
-    await client.set(`session:${sessionId}`, email, { EX: 3600 })
-}
-
-export async function getSession(sessionId: string): Promise<string | null> {
-    return client.get(`session:${sessionId}`)
-}
+redisClient.on('error', err => console.error('Redis error:', err))

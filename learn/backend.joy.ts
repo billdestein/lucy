@@ -75,24 +75,15 @@ The user object has these properties:
     - email: string
     - slug: string
 
-The slug is computed by slugFromEmail, and the inverse is emailFromSlug:
+The slug is computed by slugFromEmail, and the inverse is emailFromSlug.
+Both functions are defined in the common package — import them from there.
 
-    export function slugFromEmail(email: string): string {
-        return email.toLowerCase().replace('@', '-at-').replace(/[^a-z0-9.-]/g, '-')
-    }
+The slug is computed fresh on every login from the user's email via slugFromEmail.
+There is no users.json or any other lookup table. The slug is the directory name,
+and the directory listing is the source of truth. emailFromSlug recovers the email
+from the directory name exactly.
 
-    export function emailFromSlug(slug: string): string {
-        return slug.replace('-at-', '@')
-    }
-
-Example: billdestein@gmail.com → billdestein-at-gmail.com
-
-Slugs are persisted to MOUNT_DIR/users.json (a JSON object mapping email to slug).
-On first login the slug is computed with slugFromEmail and written to users.json.
-On subsequent logins the slug is read from users.json, so it never drifts even
-if the slugFromEmail algorithm changes.
-
-All of the this happens in the login endpoint:
+All of this happens in the login endpoint:
 - The login endpoint receives an authorization header that contains the Cognito ID token.
 - The backend calls Cognito to validate the ID token and to get the user's email.  
 - The backend then creates a User object if it does not already exist.
@@ -184,11 +175,13 @@ Endpoint: /v1/workbooks/generate-pic (POST)
         and promptText. This is text-to-image generation.
         Get the raw bytes from generatedImages[0].image.imageBytes.
       - Otherwise: read the source pic file from disk, base64-encode it, and call
-        ai.models.generateContent with model gemini-2.5-flash-image,
-        passing contents as a flat array of parts (NOT wrapped in a role object):
-        [{ inlineData: { data: sourceBytes, mimeType } }, { text: promptText }].
-        No config block (no responseModalities needed).
-        Extract the result from response.candidates[0].content.parts — find the part with inlineData.
+        ai.models.generateContent with model gemini-2.5-flash-image.
+        Pass contents as a flat array of parts (NOT wrapped in a role object):
+        [{ inlineData: { data: sourceBytes, mimeType: 'image/png' } }, { text: promptText }].
+        Always use mimeType 'image/png' regardless of the source file's actual mime type.
+        Do NOT pass a config block — no responseModalities needed.
+        Extract the result from response.candidates[0].content.parts — find the part
+        where inlineData is present.
         Get the raw bytes from that part's inlineData.data.
         This is image mutation and works with a standard Google API key.
     - Wrap the API call in try/catch; on error, log and return status 500 with the error message.

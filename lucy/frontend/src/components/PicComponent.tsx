@@ -7,15 +7,10 @@ type Props = {
     onClick: () => void
 }
 
-export default function PicComponent({ name, focused, sentinel, onClick }: Props) {
+export function PicComponent({ name, focused, sentinel, onClick }: Props) {
     const [hovered, setHovered] = React.useState(false)
 
-    const bg = focused
-        ? '#0e639c'
-        : hovered
-        ? '#2a2d2e'
-        : 'transparent'
-
+    const bg = focused ? '#094771' : hovered ? '#2a2d2e' : 'transparent'
     const color = focused ? '#fff' : sentinel ? '#4ec9b0' : '#ccc'
 
     return (
@@ -28,13 +23,11 @@ export default function PicComponent({ name, focused, sentinel, onClick }: Props
                 cursor: 'pointer',
                 background: bg,
                 color,
-                fontSize: 13,
                 fontStyle: sentinel ? 'italic' : 'normal',
+                fontSize: 13,
+                fontFamily: 'sans-serif',
                 borderBottom: sentinel ? '1px solid #444' : 'none',
                 userSelect: 'none',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
             }}
         >
             {name}

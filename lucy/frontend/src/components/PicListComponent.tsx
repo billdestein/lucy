@@ -1,9 +1,9 @@
 import React from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import PicComponent from './PicComponent'
+import { PicComponent } from './PicComponent'
 
-export default function PicListComponent() {
-    const { workbook, setWorkbook, setSelectedPicFilename, selectedPicFilename } = useWorkbook()
+export function PicListComponent() {
+    const { workbook, setWorkbook, selectedPicFilename, setSelectedPicFilename } = useWorkbook()
 
     function handleClick(filename: string) {
         setSelectedPicFilename(filename)

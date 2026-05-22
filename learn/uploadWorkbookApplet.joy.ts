@@ -5,6 +5,8 @@ export const uploadWorkbookApplet = `
 
 The UploadWorkbookApplet is a React component that wraps Frame.
 
-The frame viewport has text "UploadWorkbookApplet"
+This is a stub — full implementation is deferred to a later session.
+
+The frame viewport contains only the placeholder text "UploadWorkbookApplet".
 
 `

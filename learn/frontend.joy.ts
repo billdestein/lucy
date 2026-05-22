@@ -93,5 +93,13 @@ BACKEND_URL variable in the frontend source. Two mechanisms resolve these relati
   backend share the same origin, so relative /v1 URLs go directly to Express — no proxy
   or BACKEND_URL needed.
 
+## start.sh
+
+The frontend has a start.sh script for local development. It reads
+~/lucy-config/FrontendLocalConfig.json (macOS) or /mount/lucy-config/FrontendProdConfig.json
+(Linux), exports VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID, then runs npx vite.
+
+As with all start.sh scripts, capture SCRIPT_DIR as an absolute path at the top before
+any cd commands, and cd back to SCRIPT_DIR before starting the server.
 
 `

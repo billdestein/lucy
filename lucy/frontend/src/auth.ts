@@ -1,31 +1,34 @@
-const OIDC_AUTHORITY = import.meta.env.VITE_COGNITO_AUTHORITY as string
-const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID as string
+const AUTHORITY = import.meta.env.VITE_COGNITO_AUTHORITY
+const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID
+const REDIRECT_URI = window.location.origin
 
-function base64url(buffer: ArrayBuffer): string {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-}
-
-function generateRandom(byteLength: number): string {
-    const arr = new Uint8Array(byteLength)
-    crypto.getRandomValues(arr)
-    return base64url(arr.buffer)
+function base64urlEncode(buf: ArrayBuffer): string {
+    return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
 async function sha256(plain: string): Promise<ArrayBuffer> {
-    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain))
+    const encoder = new TextEncoder()
+    return crypto.subtle.digest('SHA-256', encoder.encode(plain))
 }
 
-async function getDiscoveryDoc(): Promise<Record<string, string>> {
-    const res = await fetch(`${OIDC_AUTHORITY}/.well-known/openid-configuration`)
+function randomString(length: number): string {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~'
+    const arr = new Uint8Array(length)
+    crypto.getRandomValues(arr)
+    return Array.from(arr, b => chars[b % chars.length]).join('')
+}
+
+async function getOidcConfig(): Promise<{ authorization_endpoint: string; token_endpoint: string }> {
+    const res = await fetch(`${AUTHORITY}/.well-known/openid-configuration`)
     return res.json()
 }
 
-export async function signIn() {
-    const doc = await getDiscoveryDoc()
-    const state = generateRandom(32)
-    const codeVerifier = generateRandom(64)
-    const codeChallenge = base64url(await sha256(codeVerifier))
+export async function signIn(): Promise<void> {
+    const oidc = await getOidcConfig()
+    const state = randomString(32)
+    const codeVerifier = randomString(64)
+    const codeChallenge = base64urlEncode(await sha256(codeVerifier))
 
     localStorage.setItem('pkce_state', state)
     localStorage.setItem('pkce_verifier', codeVerifier)
@@ -33,62 +36,65 @@ export async function signIn() {
     const params = new URLSearchParams({
         response_type: 'code',
         client_id: CLIENT_ID,
-        redirect_uri: window.location.origin,
+        redirect_uri: REDIRECT_URI,
         scope: 'openid email',
         state,
         code_challenge: codeChallenge,
         code_challenge_method: 'S256',
     })
 
-    window.location.href = `${doc.authorization_endpoint}?${params}`
+    window.location.href = `${oidc.authorization_endpoint}?${params}`
 }
 
 export async function handleCallback(): Promise<string | null> {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
     const state = params.get('state')
+
     if (!code || !state) return null
 
     const storedState = localStorage.getItem('pkce_state')
     const codeVerifier = localStorage.getItem('pkce_verifier')
+
     if (state !== storedState || !codeVerifier) {
-        console.error('PKCE state mismatch')
+        localStorage.removeItem('pkce_state')
+        localStorage.removeItem('pkce_verifier')
         return null
     }
 
-    const doc = await getDiscoveryDoc()
-    const res = await fetch(doc.token_endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: CLIENT_ID,
-            code,
-            redirect_uri: window.location.origin,
-            code_verifier: codeVerifier,
-        }),
+    const oidc = await getOidcConfig()
+    const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        code,
+        code_verifier: codeVerifier,
     })
 
-    if (!res.ok) {
-        console.error('Token exchange failed:', await res.text())
-        return null
-    }
+    const res = await fetch(oidc.token_endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+    })
 
     const tokens = await res.json()
-    localStorage.setItem('id_token', tokens.id_token)
+    const idToken = tokens.id_token as string
+
+    localStorage.setItem('id_token', idToken)
     localStorage.removeItem('pkce_state')
     localStorage.removeItem('pkce_verifier')
-    history.replaceState({}, '', window.location.origin)
+    history.replaceState(null, '', window.location.pathname)
 
-    return tokens.id_token as string
+    return idToken
 }
 
-export function getIdToken(): string | null {
+export function getStoredIdToken(): string | null {
     const token = localStorage.getItem('id_token')
     if (!token) return null
+
     try {
-        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-        if (payload.exp < Date.now() / 1000) {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
             localStorage.removeItem('id_token')
             return null
         }
@@ -98,12 +104,15 @@ export function getIdToken(): string | null {
     }
 }
 
-export async function signOut() {
-    const doc = await getDiscoveryDoc()
-    localStorage.removeItem('id_token')
-    const params = new URLSearchParams({
-        client_id: CLIENT_ID,
-        logout_uri: window.location.origin,
+export async function loginToBackend(idToken: string): Promise<void> {
+    await fetch('/v1/auth/login', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}` },
+        credentials: 'include',
     })
-    window.location.href = `${doc.end_session_endpoint}?${params}`
+}
+
+export function signOut(): void {
+    localStorage.removeItem('id_token')
+    window.location.reload()
 }

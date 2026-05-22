@@ -1,23 +1,21 @@
 import React, { useState } from 'react'
 import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
-import { isValidFilename } from '../promptProtocol'
 
-type Message = {
-    prompt: string
-    onOk: (value: string) => void
+function isValidLinuxFilename(name: string): boolean {
+    return name.length > 0 && !name.includes('/') && !name.includes('\0')
 }
 
-export default function PromptApplet(props: AppletProps) {
-    const { frameId, prompt, onOk } = { ...props, ...(props.message as Message) }
-    const [text, setText] = useState('')
+export function PromptApplet({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+    const { prompt, onOk } = message as { prompt: string; onOk: (value: string) => void }
+    const [value, setValue] = useState('')
     const [error, setError] = useState('')
 
     function handleOk() {
-        if (!isValidFilename(text)) {
-            setError('Invalid filename')
+        if (!isValidLinuxFilename(value)) {
+            setError('Invalid filename.')
             return
         }
-        onOk(text)
+        onOk(value)
         removeApplet(frameId)
     }
 
@@ -26,25 +24,20 @@ export default function PromptApplet(props: AppletProps) {
     }
 
     return (
-        <Frame {...props} title="Lucy" width={380} height={140}>
-            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, color: '#ccc', fontSize: 13 }}>
+        <Frame
+            frameId={frameId} height={height} width={width} x={x} y={y}
+            zIndex={zIndex} isModal={isModal} title="Prompt"
+        >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 16, color: '#ccc', fontFamily: 'sans-serif', fontSize: 13 }}>
                 <div>{prompt}</div>
                 <input
                     autoFocus
-                    value={text}
-                    onChange={e => { setText(e.target.value); setError('') }}
+                    value={value}
+                    onChange={e => { setValue(e.target.value); setError('') }}
                     onKeyDown={e => { if (e.key === 'Enter') handleOk() }}
-                    style={{
-                        background: '#3c3c3c',
-                        border: '1px solid #555',
-                        color: '#ccc',
-                        padding: '4px 8px',
-                        fontSize: 13,
-                        borderRadius: 3,
-                        outline: 'none',
-                    }}
+                    style={{ background: '#3c3c3c', border: '1px solid #555', color: '#ccc', padding: '4px 8px', borderRadius: 3, fontSize: 13 }}
                 />
-                {error && <div style={{ color: '#f88', fontSize: 12 }}>{error}</div>}
+                {error && <div style={{ color: '#f44' }}>{error}</div>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button onClick={handleCancel} style={btnStyle}>Cancel</button>
                     <button onClick={handleOk} style={{ ...btnStyle, background: '#0e639c' }}>OK</button>
@@ -55,11 +48,6 @@ export default function PromptApplet(props: AppletProps) {
 }
 
 const btnStyle: React.CSSProperties = {
-    background: '#3c3c3c',
-    border: 'none',
-    color: '#ccc',
-    padding: '4px 14px',
-    borderRadius: 3,
-    cursor: 'pointer',
-    fontSize: 13,
+    background: '#3c3c3c', border: '1px solid #555', color: '#ccc',
+    padding: '4px 14px', borderRadius: 3, fontSize: 13, cursor: 'pointer',
 }

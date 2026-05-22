@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
-import { UserType } from '@billdestein/joy-common'
-import { getSession } from '../services/redis'
+import { redisClient } from '../services/redis'
 import { findOrCreateUser } from '../services/users'
+import { UserType } from '@billdestein/joy-common'
 
 declare global {
     namespace Express {
@@ -11,16 +11,16 @@ declare global {
     }
 }
 
-export async function requireSession(req: Request, res: Response, next: NextFunction) {
+export async function sessionMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
     const sessionId = req.cookies?.sessionId
     if (!sessionId) {
-        res.status(401).json({ error: 'No session' })
+        res.status(401).json({ error: 'Not authenticated' })
         return
     }
 
-    const email = await getSession(sessionId)
+    const email = await redisClient.get(`session:${sessionId}`)
     if (!email) {
-        res.status(401).json({ error: 'Invalid session' })
+        res.status(401).json({ error: 'Session expired' })
         return
     }
 

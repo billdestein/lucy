@@ -4,9 +4,9 @@
 export const composerButtonRowComponent = `
 
 The ComposerButtonRowComponent takes a single prop: editorText (string).  It reads
-workbook, setWorkbook, and setIsLoading from WorkbookContext via useWorkbook().  It
-uses stripForBackend before sending a workbook to the backend, and hydrateFromBackend
-after receiving one.
+workbook, setWorkbook, setIsLoading, and setSelectedPicFilename from WorkbookContext
+via useWorkbook().  It uses stripForBackend before sending a workbook to the backend,
+and hydrateFromBackend after receiving one.
 
 The ComposerButtonRowComponent has two child components:  The paginator and the play button.
 

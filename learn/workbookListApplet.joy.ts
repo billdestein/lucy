@@ -20,22 +20,23 @@ Each row has three columns
 
 (1) name is string
 
-(2) lastModifiedISO is the workbook's last modified timestamp as an ISO datetime string,
-    with these modifications.  Remove milliseconds.  Replace 'T' with ' '.  Remove 'Z'.
-    Use a fixed width font so all values in the column have the same width.
+(2) createdISO is derived from workbook.createdAt (a millisecond epoch timestamp),
+    formatted as an ISO datetime string with these modifications: remove milliseconds,
+    replace 'T' with ' ', remove 'Z'.  Use a fixed width font so all values in the
+    column have the same width.
 
-(3) lastModifiedAgo is the time since the workbook was last modified expressed as xxx days
-ago, or xxx hours ago, or xxx minutes ago.
+(3) createdAgo is the time since workbook.createdAt, expressed as xxx days ago,
+    or xxx hours ago, or xxx minutes ago.
 
-Columns 1 and 2 are sortable.  Column 3 is not.
+Columns 1 (name) and 2 (createdISO) are sortable.  Column 3 (createdAgo) is not.
 
 The AG Grid row data is NOT a WorkbookType. Each row object has the shape:
-{ name, lastModifiedISO, lastModifiedAgo, _wb: WorkbookType }
+{ name, createdISO, createdAgo, _wb: WorkbookType }
 where _wb holds the original WorkbookType. When the context menu needs the WorkbookType
 (e.g. to pass to an API call or to open a WorkbookApplet), always read rowNode.data._wb —
 do not cast rowNode.data directly as WorkbookType, as it does not have a workbookName property.
 
-Left-clicking a row opens the corresponding WorkbookApplet, the same as the "Open workbook" context menu option.
+Clicking a row opens the corresponding WorkbookApplet, the same as the "Open workbook" context menu option.
 
 Each row has a context menu.  The context menu is implemented from scratch.  It does not
 use AG Grids context menu features.  When the user right clicks on a row, the context menu

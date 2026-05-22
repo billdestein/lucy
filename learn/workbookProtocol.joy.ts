@@ -5,8 +5,8 @@ export const workbookProtocol = `
 
 ## WorkbookContext
 
-WorkbookContext is a React context that lives at the WorkbookFrame level.  There is one
-WorkbookContext per open WorkbookFrame.
+WorkbookContext is a React context that lives at the WorkbookApplet level.  There is one
+WorkbookContext per open WorkbookApplet.
 
 The context holds:
 
@@ -17,14 +17,14 @@ The context holds:
 - selectedPicFilename: string — filename of the currently selected pic (never null; 'empty' when no real pic is focused)
 - setSelectedPicFilename: (filename: string) => void
 
-All descendants of WorkbookFrame access and update the workbook through this context.
+All descendants of WorkbookApplet access and update the workbook through this context.
 Props are not used to pass the workbook or its setters down the component tree.
 
 selectedPicFilename and workbook.focusedPicFilename are always kept in sync.
 'empty' is the sentinel value meaning no real pic is focused (text-to-image mode).
 
 A custom hook called useWorkbook() returns the context value.  It throws if called
-outside a WorkbookFrame.
+outside a WorkbookApplet.
 
 ## stripForBackend
 
@@ -40,5 +40,6 @@ Promise<WorkbookType>.  It calls the cache refresh function to populate the enco
 of every PicType from the local cache or from the backend get-pic endpoint if not cached.
 
 Call hydrateFromBackend after receiving a workbook from any backend endpoint.
+
 
 `

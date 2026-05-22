@@ -1,63 +1,58 @@
-import React, { useState, useRef, ReactNode } from 'react'
+import React, { useState, useRef } from 'react'
 
 type Props = {
-    icon: ReactNode
+    icon: React.ReactNode
     handler: () => void
     tooltipLabel: string
 }
 
-export default function ComposerButtonComponent({ icon, handler, tooltipLabel }: Props) {
-    const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null)
+export function ComposerButtonComponent({ icon, handler, tooltipLabel }: Props) {
+    const [hovered, setHovered] = useState(false)
+    const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
     const btnRef = useRef<HTMLDivElement>(null)
 
-    function onMouseEnter() {
-        const rect = btnRef.current?.getBoundingClientRect()
-        if (rect) {
-            setTooltipPos({ x: rect.left + rect.width / 2, y: rect.bottom + 4 })
+    function handleMouseEnter() {
+        if (btnRef.current) {
+            const r = btnRef.current.getBoundingClientRect()
+            setTooltipPos({ top: r.bottom + 4, left: r.left + r.width / 2 })
         }
+        setHovered(true)
     }
 
     return (
-        <div style={{ position: 'relative', display: 'inline-flex' }}>
+        <>
             <div
                 ref={btnRef}
                 onClick={handler}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={() => setTooltipPos(null)}
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={() => setHovered(false)}
                 style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '4px 6px',
-                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 28, height: 28, borderRadius: 4, cursor: 'pointer',
                     color: '#ccc',
-                    borderRadius: 3,
-                    background: tooltipPos ? '#3c3c3c' : 'transparent',
-                    transition: 'background 0.1s',
+                    background: hovered ? '#3a3d4a' : 'transparent',
                 }}
             >
                 {icon}
             </div>
-            {tooltipPos && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        left: tooltipPos.x,
-                        top: tooltipPos.y,
-                        transform: 'translateX(-50%)',
-                        background: '#3c3c3c',
-                        color: '#ccc',
-                        fontSize: 11,
-                        padding: '2px 6px',
-                        borderRadius: 3,
-                        whiteSpace: 'nowrap',
-                        pointerEvents: 'none',
-                        zIndex: 99999,
-                    }}
-                >
+            {hovered && (
+                <div style={{
+                    position: 'fixed',
+                    top: tooltipPos.top,
+                    left: tooltipPos.left,
+                    transform: 'translateX(-50%)',
+                    background: '#333',
+                    color: '#fff',
+                    fontSize: 11,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    whiteSpace: 'nowrap',
+                    pointerEvents: 'none',
+                    zIndex: 99999,
+                }}>
                     {tooltipLabel}
                 </div>
             )}
-        </div>
+        </>
     )
 }

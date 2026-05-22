@@ -1,9 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react'
-import { Frame, AppletProps } from '@billdestein/joy-applets'
+import React, { useEffect, useRef, useState } from 'react'
+import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
+import { ButtonIcons } from '../ButtonIcons'
 
 const VIDEO_RATIO = 1112 / 625
 
-export default function DemoApplet(props: AppletProps) {
+export function DemoApplet({ frameId, height, width, x, y, zIndex, isModal }: AppletProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [dims, setDims] = useState({ width: 0, height: 0 })
 
@@ -11,9 +13,9 @@ export default function DemoApplet(props: AppletProps) {
         const el = containerRef.current
         if (!el) return
         const obs = new ResizeObserver(() => {
-            const { width, height } = el.getBoundingClientRect()
-            let w = width, h = width / VIDEO_RATIO
-            if (h > height) { h = height; w = height * VIDEO_RATIO }
+            const { width: w0, height: h0 } = el.getBoundingClientRect()
+            let w = w0, h = w0 / VIDEO_RATIO
+            if (h > h0) { h = h0; w = h0 * VIDEO_RATIO }
             setDims({ width: Math.floor(w), height: Math.floor(h) })
         })
         obs.observe(el)
@@ -21,17 +23,27 @@ export default function DemoApplet(props: AppletProps) {
     }, [])
 
     return (
-        <Frame {...props} title="Demo">
+        <Frame
+            frameId={frameId} height={height} width={width} x={x} y={y}
+            zIndex={zIndex} isModal={isModal} title="Demo"
+            headerButtons={
+                <FrameHeaderButtonComponent
+                    icon={ButtonIcons.x}
+                    handler={() => removeApplet(frameId)}
+                    tooltipLabel="Close"
+                />
+            }
+        >
             <div
                 ref={containerRef}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+                style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}
             >
                 {dims.width > 0 && (
                     <iframe
                         src="https://s3.us-west-2.amazonaws.com/billdestein.videos/lucy-v3.mp4"
                         width={dims.width}
                         height={dims.height}
-                        style={{ border: 'none', display: 'block' }}
+                        style={{ border: 'none' }}
                         allowFullScreen
                     />
                 )}

@@ -1,115 +1,106 @@
 import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
 import { addApplet } from '@billdestein/joy-applets'
-import ZoomApplet from '../applets/ZoomApplet'
 
-export default function ViewerComponent() {
+export function ViewerComponent() {
     const { workbook, isLoading, selectedPicFilename } = useWorkbook()
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
-    const pic =
-        workbook.pics.find(p => p.filename === selectedPicFilename) ??
-        workbook.pics[workbook.pics.length - 1]
+    const pic = workbook.pics.find(p => p.filename === selectedPicFilename)
+        ?? workbook.pics[workbook.pics.length - 1]
 
-    const hasImage = pic && pic.mimeType !== '' && pic.encodedImage !== ''
-    const src = hasImage ? `data:${pic.mimeType};base64,${pic.encodedImage}` : null
+    const hasImage = pic && pic.encodedImage && pic.mimeType
 
-    function onContextMenu(e: React.MouseEvent) {
-        if (!hasImage) return
+    const imgSrc = hasImage ? `data:${pic.mimeType};base64,${pic.encodedImage}` : null
+
+    function handleContextMenu(e: React.MouseEvent) {
         e.preventDefault()
         setContextMenu({ x: e.clientX, y: e.clientY })
     }
 
-    function dismiss() {
-        setContextMenu(null)
-    }
+    function closeMenu() { setContextMenu(null) }
 
-    function downloadImage() {
-        dismiss()
-        if (!src || !pic) return
+    function handleDownload() {
+        if (!imgSrc || !pic) return
         const a = document.createElement('a')
-        a.href = src
+        a.href = imgSrc
         a.download = pic.filename
         a.click()
+        closeMenu()
     }
 
-    function saveAsPic() {
-        dismiss()
+    function handleSaveAs() {
         alert('save')
+        closeMenu()
     }
 
-    function zoomImage() {
-        dismiss()
+    async function handleZoom() {
         if (!pic) return
-        addApplet(ZoomApplet, { message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType } })
+        const { ZoomApplet } = await import('../applets/ZoomApplet')
+        addApplet(ZoomApplet as any, {
+            height: 600, width: 800, x: 100, y: 100, zIndex: 0, isModal: false,
+            message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType },
+        })
+        closeMenu()
     }
 
     return (
         <div
             ref={containerRef}
-            style={{
-                flex: 1,
-                background: '#000',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                overflow: 'hidden',
-            }}
-            onContextMenu={onContextMenu}
-            onClick={dismiss}
+            style={{ width: '100%', height: '100%', background: '#000', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onContextMenu={handleContextMenu}
+            onClick={closeMenu}
         >
-            {isLoading && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.4)', zIndex: 10 }}>
-                    <div style={{
-                        width: 72, height: 72, borderRadius: '50%', animation: 'spin 1s linear infinite',
-                        background: 'conic-gradient(from 0deg, #e74c3c, #f39c12, #f1c40f, #2ecc71, #3498db, #9b59b6, #e74c3c)',
-                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px))',
-                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 7px))',
-                    }} />
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                </div>
-            )}
-            {src ? (
+            {imgSrc ? (
                 <img
-                    src={src}
-                    alt={pic?.filename}
+                    src={imgSrc}
+                    alt={pic!.filename}
                     style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                    draggable={false}
                 />
             ) : (
                 <div style={{ width: '100%', height: '100%', background: '#000' }} />
             )}
+
+            {isLoading && (
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(0,0,0,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <div style={{
+                        width: 72, height: 72, borderRadius: '50%',
+                        background: 'conic-gradient(red, orange, yellow, green, blue, purple, red)',
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 7px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 7px), black calc(100% - 7px))',
+                        animation: 'lucy-spin 1s linear infinite',
+                    }} />
+                    <style>{`@keyframes lucy-spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+            )}
+
             {contextMenu && (
                 <div
                     style={{
-                        position: 'fixed',
-                        left: contextMenu.x,
-                        top: contextMenu.y,
-                        background: '#2d2d2d',
-                        border: '1px solid #555',
-                        borderRadius: 4,
-                        zIndex: 99999,
-                        minWidth: 140,
+                        position: 'fixed', top: contextMenu.y, left: contextMenu.x,
+                        background: '#2d2d2d', border: '1px solid #555', borderRadius: 4,
+                        zIndex: 99999, minWidth: 160, boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
                     }}
                     onClick={e => e.stopPropagation()}
                 >
                     {[
-                        { label: 'Download image', action: downloadImage },
-                        { label: 'Save as pic', action: saveAsPic },
-                        { label: 'Zoom', action: zoomImage },
+                        { label: 'Download image', action: handleDownload },
+                        { label: 'Save as pic', action: handleSaveAs },
+                        { label: 'Zoom', action: handleZoom },
                     ].map(item => (
                         <div
                             key={item.label}
                             onClick={item.action}
                             style={{
-                                padding: '7px 14px',
-                                color: '#ccc',
-                                fontSize: 13,
-                                cursor: 'pointer',
+                                padding: '6px 14px', color: '#ccc', fontSize: 13,
+                                cursor: 'pointer', fontFamily: 'sans-serif',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.background = '#3c3c3c')}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#3a3a3a')}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                         >
                             {item.label}

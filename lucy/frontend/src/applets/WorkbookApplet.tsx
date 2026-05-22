@@ -1,50 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/joy-applets'
-import { WorkbookProvider } from '../WorkbookContext'
-import { WorkbookType, PicType, PromptType } from '@billdestein/joy-common'
-import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
+import { WorkbookProvider, useWorkbook, makeEmptyPrompt } from '../WorkbookContext'
+import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
-import FrameHeaderButtonComponent from '../components/FrameHeaderButtonComponent'
-import PicListComponent from '../components/PicListComponent'
-import ViewerComponent from '../components/ViewerComponent'
-import ComposerComponent from '../components/ComposerComponent'
-import UploadPicApplet from './UploadPicApplet'
-import PromptApplet from './PromptApplet'
+import { PicListComponent } from '../components/PicListComponent'
+import { ViewerComponent } from '../components/ViewerComponent'
+import { ComposerComponent } from '../components/ComposerComponent'
+import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
+import { WorkbookType } from '@billdestein/joy-common'
 
-function Slider({ orientation, onMouseDown }: { orientation: 'horizontal' | 'vertical'; onMouseDown: (e: React.MouseEvent) => void }) {
-    const [hovered, setHovered] = React.useState(false)
-    const isVert = orientation === 'vertical'
-    return (
-        <div
-            onMouseDown={onMouseDown}
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            style={{
-                width:  isVert ? 6 : '100%',
-                height: isVert ? '100%' : 6,
-                flexShrink: 0,
-                cursor: isVert ? 'col-resize' : 'row-resize',
-                background: hovered ? '#555' : '#3c3c3c',
-                transition: 'background 0.1s',
-                zIndex: 1,
-            }}
-        />
-    )
-}
+function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+    const { workbook, setWorkbook, setSelectedPicFilename } = useWorkbook()
+    const workbookName = (message as { workbookName: string }).workbookName
 
-type Message = { workbookName: string }
-
-function emptyWorkbook(name: string): WorkbookType {
-    const emptyPic: PicType = { createdAt: Date.now(), encodedImage: '', filename: 'empty', mimeType: '' }
-    const emptyPrompt: PromptType = { createdAt: Date.now(), focused: true, text: '' }
-    return { createdAt: Date.now(), focusedPicFilename: 'empty', pics: [emptyPic], prompts: [emptyPrompt], workbookName: name }
-}
-
-export default function WorkbookApplet(props: AppletProps) {
-    const { workbookName } = props.message as Message
-    const [workbook, setWorkbook] = useState<WorkbookType>(emptyWorkbook(workbookName))
-    const [isLoading, setIsLoading] = useState(false)
-    const [selectedPicFilename, setSelectedPicFilename] = useState('empty')
     const [leftPct, setLeftPct] = useState(30)
     const [topPct, setTopPct] = useState(60)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -52,64 +20,20 @@ export default function WorkbookApplet(props: AppletProps) {
     useEffect(() => {
         async function load() {
             const res = await fetch(`/v1/workbooks/get-workbook?workbookName=${encodeURIComponent(workbookName)}`, { credentials: 'include' })
-            if (!res.ok) return
-            const data = await res.json()
-            let wb: WorkbookType = data.workbook
-            if (!wb.prompts || wb.prompts.length === 0) {
-                wb = { ...wb, prompts: [{ createdAt: Date.now(), focused: true, text: '' }] }
-            }
-            const hydrated = await hydrateFromBackend(wb)
+            const { workbook: wb } = await res.json() as { workbook: WorkbookType }
+            const prompts = wb.prompts?.length ? wb.prompts : [makeEmptyPrompt()]
+            const normalized: WorkbookType = { ...wb, prompts }
+            const hydrated = await hydrateFromBackend(normalized)
             setWorkbook(hydrated)
             setSelectedPicFilename(hydrated.focusedPicFilename ?? 'empty')
         }
         load()
-    }, [])
+    }, [workbookName])
 
-    function onHorizDragStart(e: React.MouseEvent) {
-        e.preventDefault()
-        const container = containerRef.current
-        if (!container) return
-        const startX = e.clientX
-        const startPct = leftPct
-        const totalW = container.clientWidth
-
-        function onMove(e: MouseEvent) {
-            const dx = e.clientX - startX
-            const newPct = Math.max(10, Math.min(90, startPct + (dx / totalW) * 100))
-            setLeftPct(newPct)
-        }
-        function onUp() {
-            window.removeEventListener('mousemove', onMove)
-            window.removeEventListener('mouseup', onUp)
-        }
-        window.addEventListener('mousemove', onMove)
-        window.addEventListener('mouseup', onUp)
-    }
-
-    function onVertDragStart(e: React.MouseEvent) {
-        e.preventDefault()
-        const container = containerRef.current
-        if (!container) return
-        const startY = e.clientY
-        const startPct = topPct
-        const totalH = container.clientHeight
-
-        function onMove(e: MouseEvent) {
-            const dy = e.clientY - startY
-            const newPct = Math.max(10, Math.min(90, startPct + (dy / totalH) * 100))
-            setTopPct(newPct)
-        }
-        function onUp() {
-            window.removeEventListener('mousemove', onMove)
-            window.removeEventListener('mouseup', onUp)
-        }
-        window.addEventListener('mousemove', onMove)
-        window.addEventListener('mouseup', onUp)
-    }
-
-    function cloneHandler() {
-        addApplet(PromptApplet, {
-            isModal: true,
+    async function handleClone() {
+        const { PromptApplet } = await import('./PromptApplet')
+        addApplet(PromptApplet as any, {
+            height: 180, width: 400, x: 200, y: 200, zIndex: 0, isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
                 onOk: async (newWorkbookName: string) => {
@@ -124,11 +48,12 @@ export default function WorkbookApplet(props: AppletProps) {
         })
     }
 
-    function uploadHandler() {
-        addApplet(UploadPicApplet, {
-            isModal: true,
+    async function handleUpload() {
+        const { UploadPicApplet } = await import('./UploadPicApplet')
+        addApplet(UploadPicApplet as any, {
+            height: 300, width: 500, x: 150, y: 150, zIndex: 0, isModal: true,
             message: {
-                workbookName,
+                workbookName: workbook.workbookName,
                 onUploaded: async (wb: WorkbookType) => {
                     const hydrated = await hydrateFromBackend(wb)
                     setWorkbook(hydrated)
@@ -138,33 +63,95 @@ export default function WorkbookApplet(props: AppletProps) {
         })
     }
 
-    const headerButtons = (
-        <>
-            <FrameHeaderButtonComponent icon={ButtonIcons.faRegCopy} handler={cloneHandler} tooltipLabel="Clone Workbook" />
-            <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={uploadHandler} tooltipLabel="Upload Image" />
-            <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(props.frameId)} tooltipLabel="Close" />
-        </>
-    )
+    // Horizontal splitter drag
+    function onHorizMouseDown(e: React.MouseEvent) {
+        e.preventDefault()
+        const container = containerRef.current
+        if (!container) return
+        const startX = e.clientX
+        const startPct = leftPct
+        const totalW = container.offsetWidth
+
+        function onMove(ev: MouseEvent) {
+            const dx = ev.clientX - startX
+            setLeftPct(Math.min(80, Math.max(10, startPct + (dx / totalW) * 100)))
+        }
+        function onUp() {
+            document.removeEventListener('mousemove', onMove)
+            document.removeEventListener('mouseup', onUp)
+        }
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+    }
+
+    // Vertical splitter drag
+    function onVertMouseDown(e: React.MouseEvent) {
+        e.preventDefault()
+        const container = containerRef.current
+        if (!container) return
+        const startY = e.clientY
+        const startPct = topPct
+        const rightH = container.offsetHeight
+
+        function onMove(ev: MouseEvent) {
+            const dy = ev.clientY - startY
+            setTopPct(Math.min(90, Math.max(10, startPct + (dy / rightH) * 100)))
+        }
+        function onUp() {
+            document.removeEventListener('mousemove', onMove)
+            document.removeEventListener('mouseup', onUp)
+        }
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('mouseup', onUp)
+    }
 
     return (
-        <WorkbookProvider value={{ workbook, setWorkbook, isLoading, setIsLoading, selectedPicFilename, setSelectedPicFilename }}>
-            <Frame {...props} title={workbookName} headerButtons={headerButtons}>
-                <div ref={containerRef} style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-                    <div style={{ width: `${leftPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                        <PicListComponent />
+        <Frame
+            frameId={frameId} height={height} width={width} x={x} y={y}
+            zIndex={zIndex} isModal={isModal} title={workbookName}
+            headerButtons={<>
+                <FrameHeaderButtonComponent icon={ButtonIcons.faRegCopy} handler={handleClone} tooltipLabel="Clone Workbook" />
+                <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={handleUpload} tooltipLabel="Upload Image" />
+                <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(frameId)} tooltipLabel="Close" />
+            </>}
+        >
+            <div ref={containerRef} style={{ display: 'flex', width: '100%', height: '100%' }}>
+                {/* Left pane */}
+                <div style={{ width: `${leftPct}%`, overflow: 'hidden' }}>
+                    <PicListComponent />
+                </div>
+
+                {/* Horizontal splitter */}
+                <div
+                    onMouseDown={onHorizMouseDown}
+                    style={{ width: 5, background: '#444', cursor: 'col-resize', flexShrink: 0 }}
+                />
+
+                {/* Right pane */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    <div style={{ height: `${topPct}%`, overflow: 'hidden' }}>
+                        <ViewerComponent />
                     </div>
-                    <Slider orientation="vertical" onMouseDown={onHorizDragStart} />
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <div style={{ height: `${topPct}%`, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <ViewerComponent />
-                        </div>
-                        <Slider orientation="horizontal" onMouseDown={onVertDragStart} />
-                        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <ComposerComponent />
-                        </div>
+
+                    {/* Vertical splitter */}
+                    <div
+                        onMouseDown={onVertMouseDown}
+                        style={{ height: 5, background: '#444', cursor: 'row-resize', flexShrink: 0 }}
+                    />
+
+                    <div style={{ flex: 1, overflow: 'hidden' }}>
+                        <ComposerComponent />
                     </div>
                 </div>
-            </Frame>
+            </div>
+        </Frame>
+    )
+}
+
+export function WorkbookApplet(props: AppletProps) {
+    return (
+        <WorkbookProvider>
+            <WorkbookAppletInner {...props} />
         </WorkbookProvider>
     )
 }

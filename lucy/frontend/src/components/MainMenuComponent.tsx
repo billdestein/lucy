@@ -1,39 +1,53 @@
 import React from 'react'
 import { addApplet } from '@billdestein/joy-applets'
-import DemoApplet from '../applets/DemoApplet'
-import WorkbookListApplet from '../applets/WorkbookListApplet'
 import { signOut } from '../auth'
 
-export default function MainMenuComponent() {
+export function MainMenuComponent() {
+    async function handleDemo() {
+        const { DemoApplet } = await import('../applets/DemoApplet')
+        addApplet(DemoApplet as any, {
+            height: 625, width: 1112, x: 50, y: 50, zIndex: 0, isModal: false, message: {},
+        })
+    }
+
+    async function handleWorkbooks() {
+        const { WorkbookListApplet } = await import('../applets/WorkbookListApplet')
+        addApplet(WorkbookListApplet as any, {
+            height: 400, width: 700, x: 80, y: 80, zIndex: 0, isModal: false, message: {},
+        })
+    }
+
     return (
-        <div
-            style={{
-                width: '100%',
-                height: 40,
-                background: '#2d2d2d',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 12px',
-                flexShrink: 0,
-                borderBottom: '1px solid #444',
-            }}
-        >
+        <div style={{
+            display: 'flex', alignItems: 'center', height: 36,
+            background: '#2d2d2d', borderBottom: '1px solid #444', padding: '0 8px',
+        }}>
             <div style={{ display: 'flex', gap: 4 }}>
-                <button onClick={() => addApplet(DemoApplet, { width: 1112, height: 625 })} style={menuButtonStyle}>Demo</button>
-                <button onClick={() => addApplet(WorkbookListApplet, {})} style={menuButtonStyle}>Workbooks</button>
+                <MenuButton label="Demo" onClick={handleDemo} />
+                <MenuButton label="Workbooks" onClick={handleWorkbooks} />
             </div>
-            <button onClick={signOut} style={menuButtonStyle}>Sign Out</button>
+            <div style={{ marginLeft: 'auto' }}>
+                <MenuButton label="Sign Out" onClick={signOut} />
+            </div>
         </div>
     )
 }
 
-const menuButtonStyle: React.CSSProperties = {
-    background: 'transparent',
-    border: 'none',
-    color: '#ccc',
-    cursor: 'pointer',
-    fontSize: 13,
-    padding: '4px 10px',
-    borderRadius: 3,
+function MenuButton({ label, onClick }: { label: string; onClick: () => void }) {
+    const [hovered, setHovered] = React.useState(false)
+    return (
+        <button
+            onClick={onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                background: hovered ? '#3a3d4a' : 'transparent',
+                border: 'none', color: '#ccc', fontSize: 13,
+                fontFamily: 'sans-serif', padding: '4px 10px',
+                borderRadius: 4, cursor: 'pointer',
+            }}
+        >
+            {label}
+        </button>
+    )
 }
