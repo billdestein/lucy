@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------------------------------
 export const uploadWorkbookApplet = `
 
-The UploadWorkbookApplet is a React component that wraps Frame.
+The UploadWorkbookApplet is an Applet.
 
 This is a stub — full implementation is deferred to a later session.
 

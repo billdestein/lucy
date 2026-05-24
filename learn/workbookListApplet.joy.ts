@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------------------------------
 export const workbookListApplet = `
 
-The WorkbookListApplet is a React component that wraps Frame.
+The WorkbookListApplet is an Applet.
 
 At initialization, WorkbookListApplet calls the list-workbooks endpoint on the backend server.
 

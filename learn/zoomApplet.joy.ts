@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------------------------------
 export const zoomApplet = `
 
-The ZoomApplet is a React component that wraps Frame.
+The ZoomApplet is an Applet.
 
 The ZoomApplet takes two props via message:
 

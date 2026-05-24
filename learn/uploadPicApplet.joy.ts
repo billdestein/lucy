@@ -3,8 +3,7 @@
 //----------------------------------------------------------------------------------------------------
 export const uploadPicApplet = `
 
-The UploadPicApplet is a React component that wraps Frame.  It is opened as a modal
-from WorkbookApplet.
+The UploadPicApplet is an Applet.
 
 It receives a message with two fields:
   - workbookName: string

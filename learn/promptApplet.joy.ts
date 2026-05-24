@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------------------------------
 export const promptApplet = `
 
-The PromptApplet is a React component that wraps Frame.
+The PromptApplet is an Applet.
 
 The PromptApplet has a 'prompt' in its message.  The prompt is displayed in the viewport.
 
