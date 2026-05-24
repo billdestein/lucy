@@ -1,6 +1,6 @@
 # The Lucy Experiment
 
-I've worked as a full-stack developer for almost two decades.  I've used Claude for code reviews,
+I've been working as a full-stack developer for almost two decades.  I've used Claude for code reviews,
 test case generation, and various refactoring chores.  It was on May 5, 2026 that I asked myself,
 "Can I use Claude to develop an entire three-tier application without writing a single line of code?"
 More specifically:
