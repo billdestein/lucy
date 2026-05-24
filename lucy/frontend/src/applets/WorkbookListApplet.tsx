@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import { GridApi, ColDef } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
@@ -53,13 +53,19 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
     const containerRef = useRef<HTMLDivElement>(null)
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; wb: WorkbookType } | null>(null)
 
-    async function loadWorkbooks() {
+    const loadWorkbooks = useCallback(async () => {
         const res = await fetch('/v1/workbooks/list-workbooks', { credentials: 'include' })
         const { workbooks } = await res.json() as { workbooks: WorkbookType[] }
         setRowData(workbooks.map(toRowData))
-    }
+    }, [])
 
-    useEffect(() => { loadWorkbooks() }, [])
+    useEffect(() => { loadWorkbooks() }, [loadWorkbooks])
+
+    useEffect(() => {
+        function onChanged() { loadWorkbooks() }
+        window.addEventListener('lucy:workbooks-changed', onChanged)
+        return () => window.removeEventListener('lucy:workbooks-changed', onChanged)
+    }, [loadWorkbooks])
 
     function onGridReady(params: { api: GridApi<RowData> }) {
         gridApiRef.current = params.api

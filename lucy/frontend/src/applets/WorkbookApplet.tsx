@@ -43,6 +43,11 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
                         credentials: 'include',
                         body: JSON.stringify({ workbook: stripForBackend(workbook), newWorkbookName }),
                     })
+                    window.dispatchEvent(new CustomEvent('lucy:workbooks-changed'))
+                    addApplet(WorkbookApplet as any, {
+                        height: 600, width: 900, x: 150, y: 150, zIndex: 0, isModal: false,
+                        message: { workbookName: newWorkbookName },
+                    })
                 },
             },
         })

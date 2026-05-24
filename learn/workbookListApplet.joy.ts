@@ -7,6 +7,10 @@ The WorkbookListApplet is a React component that wraps Frame.
 
 At initialization, WorkbookListApplet calls the list-workbooks endpoint on the backend server.
 
+loadWorkbooks is a useCallback with empty deps so it is stable across renders. It is called on
+mount and also whenever the window event 'lucy:workbooks-changed' fires (registered via
+useEffect). This allows other applets (e.g. WorkbookApplet after a clone) to trigger a refresh.
+
 The WorkbookListApplet has an AG Grid React that fills the frame body.
 
 Use ag-grid-community and ag-grid-react version ^30.0.0.

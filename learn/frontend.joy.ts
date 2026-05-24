@@ -30,10 +30,10 @@ and runs 'npm run build' in the frontend directory before starting the server.
 In development mode, no build step is needed — just restart the Vite dev server with the
 updated config and the new values are picked up immediately.
 
-Initially, frontend shows an all black window with the word "Lucy" centered in the window.
+Initially, frontend shows an all black window with the letter "L" centered in the window.
 And there's a signin button in the upper right that initiates Cognito login.
 
-For the word "Lucy", use color gold, font size 100px and font familiy "Great Vibes".
+For the letter "L", use color gold, font size 100px and font familiy "Great Vibes" and font weight 400 and -webkit-text-stroke 1.5px #000000;
 
 Once logged in, the frontend has a MainMenuComponent across the top of the browser window.
 The remainder of the vertical space is the canvas.

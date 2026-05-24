@@ -30,7 +30,8 @@ The frame header has these FrameHeaderButtonComponents (left to right):
     icon: ButtonIcons.faRegCopy
     toolTipLabel: 'Clone Workbook'
     Handler: Open a PromptApplet asking for a new workbook name.  On ok, POST
-        to /v1/workbooks/clone-workbook with { workbook: stripForBackend(workbook), newWorkbookName }.
+        to /v1/workbooks/clone-workbook with { workbook: stripForBackend(workbook), newWorkbookName },
+        then dispatch window event 'lucy:workbooks-changed', then open a new WorkbookApplet for the clone.
 }
 
 {
