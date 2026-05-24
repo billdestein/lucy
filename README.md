@@ -1,11 +1,12 @@
 # The Lucy Experiment
 
-I'm Bill DeStein.  I identify as a full stack developer.  I know other full stack developers who tell me,
-"An LLM can't do what I do."  I was unsure to what extent that was accurate.  So I set out to test
-that assertion.  I decided to run an experiment.  I call it the Lucy experiment:
+I've worked as a full-stack developer for almost two decades.  I've used Claude for code reviews,
+test case generation, and various refactoring chores.  It was on May 5, 2026 that I asked myself,
+"Can I use Claude to develop an entire three-tier application without writing a single line of code?"
+More specifically:
 
-- Can a senior full-stack developer singlehandedly create a SAAS product from scratch in seven calendar days?
-- The SAAS product is a chatbot for image processing.  Her name is Lucy.
+- Can I singlehandedly create a three-tier application from scratch in seven calendar days?
+- The three-tier application is a chatbot for image processing.  Her name is Lucy.
 - Lucy allows users to generate, mutate, and combine images.
 - Claude Code is used for code generation.
 - Gemini APIs are called from the Lucy backend for image processing.
@@ -16,7 +17,6 @@ that assertion.  I decided to run an experiment.  I call it the Lucy experiment:
 With help from Claude, I successfully produced Lucy in nine calendar days.  Lucy is 100% generated code.
 
 You can find Lucy here:  https://lucythebot.com
-
 
 # Claude's thoughts on The Lucy Experiment:
 
