@@ -30,10 +30,21 @@ and runs 'npm run build' in the frontend directory before starting the server.
 In development mode, no build step is needed — just restart the Vite dev server with the
 updated config and the new values are picked up immediately.
 
-Initially, frontend shows an all black window with the letter "L" centered in the window.
-And there's a signin button in the upper right that initiates Cognito login.
+Initially, frontend shows an all black window with the word "Lucy" centered in the window,
+using color gold, font size 100px, and font family "Great Vibes".
 
-For the letter "L", use color gold, font size 100px and font familiy "Great Vibes" and font weight 400 and -webkit-text-stroke 1.5px #000000;
+Load Great Vibes from Google Fonts using display=block (not display=swap) to prevent
+a flash of unstyled text.
+
+When the page loads, immediately start preloading the WorkbookApplet chunk via a dynamic
+import (result ignored). While the chunk is downloading, show a gold spinning circle
+below "Lucy" (no sign-in button yet). Once the chunk resolves, hide the spinner and show
+a centered "Sign In" button below "Lucy".
+
+The Sign In button style: transparent background, 1px solid gold border, gold text,
+13px font size, sans-serif, 4px/14px padding, border-radius 4, margin-top 24.
+On hover, transition the background to gold and the text color to black (transition 0.15s).
+When clicked, hide the button immediately (before the Cognito redirect).
 
 Once logged in, the frontend has a MainMenuComponent across the top of the browser window.
 The remainder of the vertical space is the canvas.
