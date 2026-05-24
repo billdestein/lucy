@@ -35,4 +35,6 @@ While uploading, it shows "Uploading…".
 The button row (right-aligned) contains:
 - Browse: opens the hidden file input
 
+The frame header has one FrameHeaderButtonComponent: Close (ButtonIcons.x), which calls removeApplet.
+
 `

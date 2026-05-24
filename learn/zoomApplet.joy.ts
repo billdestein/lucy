@@ -15,4 +15,6 @@ The image is centered in the frame's viewport.  The image is sized to be as
 large as possible while maintaining its aspect ratio and without causing clipping in
 either the horizontal or vertical direction.
 
+The frame header has one FrameHeaderButtonComponent: Close (ButtonIcons.x), which calls removeApplet.
+
 `

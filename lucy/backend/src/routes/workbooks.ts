@@ -106,9 +106,6 @@ workbooksRouter.post('/generate-pic', async (req: Request, res: Response): Promi
             const srcPath = path.join(workbookDir(slug, workbook.workbookName), workbook.focusedPicFilename)
             const srcBuf = fs.readFileSync(srcPath)
             const srcB64 = srcBuf.toString('base64')
-            const focusedPic = workbook.pics.find(p => p.filename === workbook.focusedPicFilename)
-            const mimeType = focusedPic?.mimeType ?? 'image/png'
-
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',
                 contents: [
@@ -137,11 +134,12 @@ workbooksRouter.post('/generate-pic', async (req: Request, res: Response): Promi
         mimeType: 'image/png',
     }
 
-    const updated: WorkbookType = {
-        ...workbook,
-        pics: [...workbook.pics, newPic],
-        focusedPicFilename: outputFilename,
-    }
+    const existingIndex = workbook.pics.findIndex(p => p.filename === outputFilename)
+    const pics = existingIndex >= 0
+        ? workbook.pics.map((p, i) => i === existingIndex ? newPic : p)
+        : [...workbook.pics, newPic]
+
+    const updated: WorkbookType = { ...workbook, pics, focusedPicFilename: outputFilename }
     saveWorkbook(slug, updated)
     res.json({ workbook: updated })
 })

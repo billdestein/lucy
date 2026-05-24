@@ -11,6 +11,9 @@ loadWorkbooks is a useCallback with empty deps so it is stable across renders. I
 mount and also whenever the window event 'lucy:workbooks-changed' fires (registered via
 useEffect). This allows other applets (e.g. WorkbookApplet after a clone) to trigger a refresh.
 
+On mount, fire a dynamic import of WorkbookApplet (result ignored) to preload the chunk while
+the user reads the list, eliminating the cold-cache delay when they click a row.
+
 The WorkbookListApplet has an AG Grid React that fills the frame body.
 
 Use ag-grid-community and ag-grid-react version ^30.0.0.

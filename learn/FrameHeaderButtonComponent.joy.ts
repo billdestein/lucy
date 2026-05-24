@@ -20,4 +20,7 @@ extend beyond the top border of the frame.
 When the mouse hovers over the button, the background color changes to something different
 but complimentary.
 
+Use onMouseDown (not onClick) with e.stopPropagation() to invoke the handler. This prevents
+the frame's header drag handler from firing when the user clicks a button near the frame edge.
+
 `

@@ -187,7 +187,9 @@ Endpoint: /v1/workbooks/generate-pic (POST)
     - Wrap the API call in try/catch; on error, log and return status 500 with the error message.
     - Write the raw bytes to outputFilename in the workbook directory.
     - Create a PicType for the new pic (mimeType: 'image/png').
-    - Append the new PicType to workbook.pics.
+    - Upsert the new PicType into workbook.pics: if a pic with the same filename already
+      exists, replace it in place; otherwise append it. This prevents duplicates when the
+      user runs a prompt with the same "save as" name more than once.
     - Set workbook.focusedPicFilename to outputFilename.
     - Save and return the updated workbook.
   - Output

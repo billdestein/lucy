@@ -26,4 +26,6 @@ whenever the container is resized:
 The container div is a flexbox that centers the iframe horizontally and vertically.
 Only render the iframe once dims.width > 0.
 
+The frame header has one FrameHeaderButtonComponent: Close (ButtonIcons.x), which calls removeApplet.
+
 `
