@@ -6,6 +6,12 @@ import { handleCallback, getStoredIdToken, loginToBackend, signIn } from './auth
 export function App() {
     const [authed, setAuthed] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [chunkReady, setChunkReady] = useState(false)
+    const [signingIn, setSigningIn] = useState(false)
+
+    useEffect(() => {
+        import('./applets/WorkbookApplet').then(() => setChunkReady(true)).catch(() => setChunkReady(true))
+    }, [])
 
     useEffect(() => {
         async function init() {
@@ -51,23 +57,37 @@ export function App() {
         return (
             <div style={{
                 width: '100%', height: '100%', background: '#000',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
             }}>
                 <span style={{ color: 'gold', fontSize: 100, fontFamily: 'Great Vibes' }}>
                     Lucy
                 </span>
-                <button
-                    onClick={signIn}
-                    style={{
-                        position: 'absolute', top: 12, right: 16,
-                        background: 'transparent', border: '1px solid gold',
-                        color: 'gold', fontSize: 13, padding: '4px 14px',
-                        borderRadius: 4, cursor: 'pointer', fontFamily: 'sans-serif',
-                    }}
-                >
-                    Sign In
-                </button>
+                {chunkReady && !signingIn ? (
+                    <button
+                        onClick={() => { setSigningIn(true); signIn() }}
+                        style={{
+                            marginTop: 24,
+                            background: 'transparent', border: '1px solid gold',
+                            color: 'gold', fontSize: 13, padding: '4px 14px',
+                            borderRadius: 4, cursor: 'pointer', fontFamily: 'sans-serif',
+                            transition: 'background 0.15s, color 0.15s',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'gold'; e.currentTarget.style.color = '#000' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'gold' }}
+                    >
+                        Sign In
+                    </button>
+                ) : (
+                    <div style={{
+                        marginTop: 24, width: 28, height: 28,
+                        border: '3px solid rgba(255,215,0,0.2)',
+                        borderTopColor: 'gold',
+                        borderRadius: '50%',
+                        animation: 'lucy-spin 0.8s linear infinite',
+                    }} />
+                )}
+                <style>{`@keyframes lucy-spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         )
     }

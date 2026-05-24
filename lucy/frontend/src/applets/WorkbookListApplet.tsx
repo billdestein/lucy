@@ -67,6 +67,9 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
         return () => window.removeEventListener('lucy:workbooks-changed', onChanged)
     }, [loadWorkbooks])
 
+    // Preload the WorkbookApplet chunk while the user reads the list
+    useEffect(() => { import('./WorkbookApplet') }, [])
+
     function onGridReady(params: { api: GridApi<RowData> }) {
         gridApiRef.current = params.api
     }
