@@ -39,7 +39,7 @@ and how it compares to current best practives."
 
 Claude responded:
 
-⏺ That's a more interesting question. Here are my honest thoughts.
+That's a more interesting question. Here are my honest thoughts.
 
 The core idea is genuinely novel
 
