@@ -87,6 +87,11 @@ It's the prompts that we ultimately care about.  When we make a bug fix, it's im
 that we make a corresponding fix to the prompts to ensure that the bug does not resurface in
 a future generation.
 
+Every time we make a change to the prompts, we rebuild the corresponding source code.  Then we
+commit both the affected prompts and the affected source files to the same Git repo.  This
+way I can tell you, "Claude, this feature was working yesterday, check the Git history to find the 
+change to the prompts that broke the feature."
+
 We're just going to generate code.
 
 Do not run npm install
