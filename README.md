@@ -22,9 +22,9 @@ The Git repo is here:  https://github.com/billdestein/lucy
 
 In the Git repo, you'll find:
 
-(1) The prompts used to create the application.  See the learn/ folder
-(2) The generated code,  See the src/ folder
-(3) Claude's comments on the project.  See README.md
+- The prompts used to create the application.  See the learn/ folder
+- The generated code,  See the src/ folder
+- Claude's comments on the project.  See README.md
 
 To generate the code from the prompts, 
 
