@@ -6,8 +6,8 @@ export const picListComponent = `
 PicListComponent takes no props.  It reads the workbook from WorkbookContext via
 useWorkbook().
 
-The PicListComponent iterates over the pics in the workbook.  For each pic,
-a PicComponent is rendered.
+The PicListComponent iterates over the pics in the workbook, sorted by createdAt descending
+(newest first).  For each pic, a PicComponent is rendered.
 
 The pic.filename is passed as the 'name' prop, except for the empty sentinel
 (filename: 'empty') which is displayed as '+ New image'.

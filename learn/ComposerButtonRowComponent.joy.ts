@@ -51,10 +51,21 @@ The 'play' button is:
 See promptProtocol.joy.ts for details on how to prepare a prompt for 
 sending from the frontend to the backend.
 
+Before calling generate-pic, build a clean prompts array:
+- Filter out any empty prompts (text.trim() === '') from workbook.prompts.
+- Set all remaining prompts unfocused.
+- Append a new PromptType { createdAt: Date.now(), focused: true, text: editorText } at the end.
+This preserves non-empty history unchanged and avoids corrupting history when the user
+navigates back to an earlier prompt, edits it, and runs it.
+
 When the generate-pic response is received:
 - Hydrate the returned workbook via hydrateFromBackend.
-- Add a new empty focused prompt and set all others unfocused.
+- Filter out any empty prompts from hydrated.prompts, set all remaining unfocused.
+- Append a new empty focused prompt { createdAt: Date.now(), focused: true, text: '' } at the end.
 - Call setWorkbook with the final workbook.
 - Call setSelectedPicFilename(finalWorkbook.focusedPicFilename ?? 'empty').
+
+The final prompts order after a run is: [...non-empty history, copy-of-what-ran, empty-focused].
+Empty prompts never accumulate in history — only the rightmost (current input) prompt is ever empty.
 
 `

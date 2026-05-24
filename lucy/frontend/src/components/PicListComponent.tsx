@@ -12,7 +12,7 @@ export function PicListComponent() {
 
     return (
         <div style={{ height: '100%', overflowY: 'auto', background: '#1e1e1e' }}>
-            {workbook.pics.map(pic => (
+            {[...workbook.pics].sort((a, b) => b.createdAt - a.createdAt).map(pic => (
                 <PicComponent
                     key={pic.filename}
                     name={pic.filename === 'empty' ? '+ New image' : pic.filename}

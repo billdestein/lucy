@@ -37,9 +37,12 @@ export function ComposerButtonRowComponent({ editorText }: Props) {
     async function runPromptHandler() {
         const wbWithText: WorkbookType = {
             ...workbook,
-            prompts: workbook.prompts.map((p: PromptType, i: number) =>
-                i === focusedIndex ? { ...p, text: editorText } : p
-            ),
+            prompts: [
+                ...workbook.prompts
+                    .filter((p: PromptType) => p.text.trim() !== '')
+                    .map((p: PromptType) => ({ ...p, focused: false })),
+                { createdAt: Date.now(), focused: true, text: editorText },
+            ],
         }
 
         const { referencedPics, outputFilename: cmdFilename } = preparePrompt(wbWithText)
@@ -65,7 +68,9 @@ export function ComposerButtonRowComponent({ editorText }: Props) {
                 const finalWorkbook: WorkbookType = {
                     ...hydrated,
                     prompts: [
-                        ...hydrated.prompts.map((p: PromptType) => ({ ...p, focused: false })),
+                        ...hydrated.prompts
+                            .filter((p: PromptType) => p.text.trim() !== '')
+                            .map((p: PromptType) => ({ ...p, focused: false })),
                         { createdAt: Date.now(), focused: true, text: '' },
                     ],
                 }
