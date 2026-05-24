@@ -16,9 +16,21 @@ More specifically:
 
 With help from Claude, I successfully produced Lucy in nine calendar days.  Lucy is 100% generated code.
 
-You can find Lucy running here:  https://lucythebot.com
+You can find the app running here:  https://lucythebot.com
 
-To generate the code from the prompts, start Claude and enter, "read and execute the file 'joy' "
+The Git repo is here:  https://github.com/billdestein/lucy
+
+In the Git repo, you'll find:
+
+(1) The prompts used to create the application.  See the learn/ folder
+(2) The generated code,  See the src/ folder
+(3) Claude's comments on the project.  See README.md
+
+To generate the code from the prompts, 
+
+- Clone the git repo
+- cd lucy
+- start Claude and enter, "read and execute the file 'joy' "
 
 # Claude's thoughts on The Lucy Experiment:
 
