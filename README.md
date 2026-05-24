@@ -12,6 +12,8 @@ More specifically:
 - Gemini APIs are called from the Lucy backend for image processing.
 - Lucy is a public facing app, so it must use current best practices for authentication and authorization.
 
+To generate the code from the prompts, start Claude and enter, "read and execute the file 'joy' "
+
 # The result:
 
 With help from Claude, I successfully produced Lucy in nine calendar days.  Lucy is 100% generated code.
