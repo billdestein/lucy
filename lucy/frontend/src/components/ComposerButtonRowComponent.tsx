@@ -4,7 +4,7 @@ import { ComposerButtonComponent } from './ComposerButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend, hydrateFromBackend } from '../workbookProtocol'
 import { preparePrompt } from '../promptProtocol'
-import { addApplet } from '@billdestein/joy-applets'
+import { addApplet } from '../applets/framework'
 import { WorkbookType, PromptType } from '@billdestein/joy-common'
 
 type Props = { editorText: string }

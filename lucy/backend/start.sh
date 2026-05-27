@@ -6,9 +6,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Build common
 cd "$SCRIPT_DIR/../common" && npm install --omit=dev && npm run build
 
-# Build applets
-cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
-
 # Select config files based on OS
 if [[ "$(uname)" == "Darwin" ]]; then
     FRONTEND_CONFIG="$HOME/lucy-config/FrontendLocalConfig.json"

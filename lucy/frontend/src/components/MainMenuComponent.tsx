@@ -1,5 +1,5 @@
 import React from 'react'
-import { addApplet } from '@billdestein/joy-applets'
+import { addApplet } from '../applets/framework'
 import { signOut } from '../auth'
 
 export function MainMenuComponent() {

@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@billdestein/joy-applets": "file:../applets",
     "@billdestein/joy-common": "file:../common",
     "@monaco-editor/react": "^4.6.0",
     "ag-grid-community": "^30.0.0",

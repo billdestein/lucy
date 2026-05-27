@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { setCanvas, addApplet } from '@billdestein/joy-applets'
+import { setCanvas, addApplet } from './applets/framework'
 import { MainMenuComponent } from './components/MainMenuComponent'
 import { handleCallback, getStoredIdToken, loginToBackend, signIn } from './auth'
 

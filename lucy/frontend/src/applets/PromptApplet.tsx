@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from './framework'
 
 function isValidLinuxFilename(name: string): boolean {
     return name.length > 0 && !name.includes('/') && !name.includes('\0')

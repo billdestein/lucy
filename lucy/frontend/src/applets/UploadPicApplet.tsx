@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from './framework'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 import { WorkbookType } from '@billdestein/joy-common'

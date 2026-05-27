@@ -29,7 +29,7 @@ export function FrameHeaderButtonComponent({ icon, handler, tooltipLabel }: Prop
                 style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: 24, height: 24, borderRadius: 4, cursor: 'pointer',
-                    color: '#ccc',
+                    color: hovered ? '#fff' : '#444',
                     background: hovered ? '#505050' : 'transparent',
                 }}
             >

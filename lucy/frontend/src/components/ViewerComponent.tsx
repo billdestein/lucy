@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import { addApplet } from '@billdestein/joy-applets'
+import { addApplet } from '../applets/framework'
 
 export function ViewerComponent() {
     const { workbook, isLoading, selectedPicFilename } = useWorkbook()
