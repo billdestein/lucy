@@ -109,10 +109,11 @@ export function Frame({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          background: '#fff',
-          border: '1px solid #ccc',
+          background: '#2b2b2b',
+          color: '#ccc',
+          border: '1px solid #555',
           borderRadius: 6,
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
         }}
       >
         {/* edges */}
@@ -133,8 +134,9 @@ export function Frame({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '4px 8px',
-            background: '#f3f3f3',
-            borderBottom: '1px solid #ddd',
+            background: '#3c3c3c',
+            borderBottom: '1px solid #555',
+            color: '#ccc',
             cursor: 'move',
             userSelect: 'none',
           }}
