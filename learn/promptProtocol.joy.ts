@@ -30,8 +30,8 @@ are sent to the backend as ReferencedPics.
 
 The user specifies the outputFilename using the -- save as command
 
-The user can insert the '-- save as' command when editing a PromptType.  If not, the frontend 
-prompts the user for an output filename using a PromptFrame.
+The user can insert the '-- save as' command when editing a PromptType.  If not, the frontend
+prompts the user for an output filename using a PromptApplet.
 
 Once the --save as and --using commands have found and handled, all comments and all
 commands are removed from the PromptType.text before sending to the backend.

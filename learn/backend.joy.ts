@@ -98,6 +98,12 @@ All of this happens in the login endpoint:
 
 All subsequent endpoint calls receive the Session ID in an http-only cookie.  The session ID is used to lookup the email in Redis.  And the email is used to "find or create" the user object.
 
+Response envelope convention: each endpoint's exact response body is given below and the
+frontend must read it using that exact shape. Data-returning endpoints wrap their payload
+in a JSON object keyed by the field name — { workbook: WorkbookType }, { workbooks:
+WorkbookType[] }, { encodedImage: string }. The lone exception is get-workbook, which returns
+the bare WorkbookType (not wrapped). Endpoints with no data respond with an empty object {}.
+
 Endpoint: /v1/auth/login (POST)
   - Input:
     - authorization header containing the Cognito ID token (not the access token)
@@ -112,7 +118,8 @@ Endpoint: /v1/auth/login (POST)
     - Create a User object with the email and slug.
     - Create the newly logged-in user's directory if it does not exist: MOUNT_DIR/users/{slug}
   - Output
-    - None
+    - HTTP 200 with an empty JSON object: {}. The session is delivered via the
+      Set-Cookie header, not the body.
 
 Endpoint: /v1/health/check (GET)
   - Input:
@@ -120,7 +127,7 @@ Endpoint: /v1/health/check (GET)
   - Processing:
     - None
   - Output
-    - None
+    - HTTP 200, no body.
 
 Endpoint: /v1/workbooks/create-workbook (POST)
 - Input:
@@ -132,7 +139,7 @@ Endpoint: /v1/workbooks/create-workbook (POST)
   - Set focusedPicFilename to 'empty'.
   - Stringify the WorkbookType object and save it in a file named workbook.json
 - Output:
-  - None
+  - HTTP 200 with an empty JSON object: {}.
 
 Endpoint: /v1/workbooks/clone-workbook (POST)
   - Input:
@@ -146,7 +153,7 @@ Endpoint: /v1/workbooks/clone-workbook (POST)
       source, but with the new workbookName and a fresh createdAt.
     - Save workbook.json in the new directory.
   - Output:
-    - None
+    - HTTP 200 with an empty JSON object: {}.
 
 Endpoint: /v1/workbooks/delete-pic (POST)
   - Input:
@@ -156,7 +163,7 @@ Endpoint: /v1/workbooks/delete-pic (POST)
     - Delete the pic from the workbook.json
     - Delete the image file
   - Output
-    - None
+    - HTTP 200 with an empty JSON object: {}.
 
 Endpoint: /v1/workbooks/delete-workbook (POST)
   - Input:
@@ -165,7 +172,7 @@ Endpoint: /v1/workbooks/delete-workbook (POST)
     - Delete the workbook
     - Delete associated pic files
   - Output:
-    - workbooks: WorkbookType[]
+    - Response body: { workbooks: WorkbookType[] }.
 
 Endpoint: /v1/workbooks/generate-pic (POST)
   - Input:
@@ -198,7 +205,7 @@ Endpoint: /v1/workbooks/generate-pic (POST)
     - Set workbook.focusedPicFilename to outputFilename.
     - Save and return the updated workbook.
   - Output
-    - workbook
+    - Response body: { workbook: WorkbookType }.
 
 Endpoint: /v1/workbooks/upload-pic (POST)
   - Input:
@@ -214,7 +221,7 @@ Endpoint: /v1/workbooks/upload-pic (POST)
     - Set workbook.focusedPicFilename to imageFilename.
     - Save and return the updated workbook.
   - Output:
-    - workbook
+    - Response body: { workbook: WorkbookType }.
 
 Endpoint: /v1/workbooks/upload-pic-from-url (POST)
   - Input:
@@ -229,7 +236,7 @@ Endpoint: /v1/workbooks/upload-pic-from-url (POST)
     - Read the current workbook, create a PicType, append it to pics,
       set focusedPicFilename to imageFilename, save and return the updated workbook.
   - Output:
-    - workbook
+    - Response body: { workbook: WorkbookType }.
 
 Endpoint: /v1/workbooks/get-pic (GET)
   - Input:
@@ -238,7 +245,7 @@ Endpoint: /v1/workbooks/get-pic (GET)
   - Processing
     - Find and read the encodedImage in file:  MOUNT_DIR/users/{slug}/workbooks/{workbookName}/{picFilename}
   - Output:
-    - encodedImage
+    - Response body: { encodedImage: string } (base64-encoded image bytes).
 
 Endpoint: /v1/workbooks/get-workbook (GET)
   - Input:
@@ -246,7 +253,7 @@ Endpoint: /v1/workbooks/get-workbook (GET)
   - Processing
     - None
   - Output:
-    - workbookType
+    - Response body: the bare WorkbookType object (NOT wrapped in an envelope).
 
 Endpoint: /v1/workbooks/list-workbooks (GET)
 - Input:
@@ -254,7 +261,7 @@ Endpoint: /v1/workbooks/list-workbooks (GET)
 - Processing
   - Construct an array of workbooks by simply reading the workbook.json files.
 - Output:
-  - workbooks: WorkbookType[]
+  - Response body: { workbooks: WorkbookType[] }.
         
 Some miscellaneous stuff:
 

@@ -23,7 +23,8 @@ The image has a context menu with these options:
 
 - "Save as pic": does alert('save')
 
-- "Zoom": adds a ZoomFrame to the canvas.  The encoded image and mime type are passed as props.  
+- "Zoom": adds a ZoomApplet to the canvas.  The encoded image and mime type are passed via
+  AppletProps.message (message.encodedImage, message.mimeType), not as React props.
 
 While the surrounding workbook has an API call to the generate-pic is pending show a spinner.
 The spinner is 72px, centered over a rgba(0,0,0,0.4) overlay that covers the viewer.
