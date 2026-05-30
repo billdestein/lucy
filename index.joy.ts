@@ -100,7 +100,7 @@ Do not start the backend server.
 
 Do not start the frontend server.
 
-If there is no lucy directory, create it.
+If there is no mono-repo directory, create it.
 
 After reading all of the prompts from the learn directory, and before building anything, tell me:
     - Do the prompts make sense?

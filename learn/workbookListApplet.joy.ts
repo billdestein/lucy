@@ -17,6 +17,8 @@ the user reads the list, eliminating the cold-cache delay when they click a row.
 The WorkbookListApplet has an AG Grid React that fills the frame body.
 
 Use ag-grid-community and ag-grid-react version ^30.0.0.
+Do NOT call ModuleRegistry.registerModules — the 'ag-grid-community' packages build
+auto-registers all community modules, and it does not export ClientSideRowModelModule.
 Import 'ag-grid-community/styles/ag-grid.css' and 'ag-grid-community/styles/ag-theme-alpine.css'.
 Use className "ag-theme-alpine-dark" on the grid container div. Do NOT import a separate
 ag-theme-alpine-dark.css file — the dark variant is a class defined within ag-theme-alpine.css.
@@ -69,7 +71,8 @@ The "Download workbook" option stringifies the workbook with an indent of four,
 and downloads it as workbook.lucy.
 
 The "Open workbook" calls addApplet to add the WorkbookApplet.
-The selected workbook name is passed as a prop to the WorkbookApplet.
+The selected workbook name is passed to the WorkbookApplet via AppletProps.message
+(message.workbookName), not as a React prop.
 
 The frame has these three FrameHeaderButtonComponents right-aligned in the header:
 

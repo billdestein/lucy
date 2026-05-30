@@ -49,10 +49,10 @@ When clicked, hide the button immediately (before the Cognito redirect).
 Once logged in, the frontend has a MainMenuComponent across the top of the browser window.
 The remainder of the vertical space is the canvas.
 
-Immediately after login, a WorkbookListFrame is added to the canvas automatically.
+Immediately after login, a WorkbookListApplet is added to the canvas automatically.
 
 One button in the MainMenuComponent has label "Workbooks".  When clicked, it adds a
-WorkbookListFrame to the canvas.
+WorkbookListApplet to the canvas.
 
 The OIDC scope must be 'openid email' — do not include 'profile', as Cognito does not enable
 it by default and it will cause an invalid_scope error.

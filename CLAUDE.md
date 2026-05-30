@@ -3,7 +3,7 @@
 ## How this repo works
 
 Lucy uses a "prompts as source of truth" methodology. The `learn/` directory contains
-`.joy.ts` files that are the canonical specification. The `lucy/` directory contains
+`.joy.ts` files that are the canonical specification. The `mono-repo/` directory contains
 generated code derived from those specs. When code needs to change, update the prompt
 first, then regenerate.
 
@@ -13,9 +13,9 @@ to read all `learn/` specs and build the four sub-packages in order.
 ## Mono-repo structure
 
 ```
-lucy/
-  common/      — shared TypeScript types (@billdestein/joy-common)
-  applets/     — windowing system (@billdestein/joy-applets)
+mono-repo/
+  common/      — shared TypeScript types (@billdestein/lucy-common)
+  applets/     — windowing system (@billdestein/lucy-applets)
   backend/     — Express API server
   frontend/    — React/Vite app
 ```

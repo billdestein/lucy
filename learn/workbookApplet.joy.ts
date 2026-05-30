@@ -5,6 +5,10 @@ export const workbookApplet = `
 
 The WorkbookApplet is a React component that wraps Frame.
 
+The WorkbookApplet reads the workbook name from AppletProps.message.workbookName
+(not from a React prop) and uses it to load the workbook from the backend via
+the get-workbook endpoint.
+
 WorkbookApplet owns selectedPicFilename state (string), initialized to 'empty'.
 After loading a workbook from the backend, selectedPicFilename is set to
 workbook.focusedPicFilename (defaulting to 'empty' if absent for old workbooks).

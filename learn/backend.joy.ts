@@ -31,14 +31,19 @@ exports environment variables, and starts the Express server. Here is what it do
    - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json
    - Linux:  /mount/lucy-config/FrontendProdConfig.json and /mount/lucy-config/BackendProdConfig.json
 
-5. Export Vite environment variables from the frontend config, then build the frontend.
-   Vite bakes these values into the JS bundle at build time, so they must be set before
-   the build runs:
+5. Export Vite environment variables from the frontend config, then install + build the
+   frontend. Vite bakes these values into the JS bundle at build time, so they must be set
+   before the build runs. start.sh owns the full install — the deploy only pushes source and
+   runs start.sh — so install the frontend dependencies (including devDependencies, which Vite
+   needs) before building:
        export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
        export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
-       cd "$SCRIPT_DIR/../frontend" && npm run build
+       cd "$SCRIPT_DIR/../frontend" && npm install && npm run build
 
-6. cd back to SCRIPT_DIR, then export backend environment variables from the backend config:
+6. cd back to SCRIPT_DIR and install the backend's own dependencies (ts-node, etc.):
+       cd "$SCRIPT_DIR" && npm install
+   Then export backend environment variables from the backend config:
+       export COGNITO_CLIENT_ID=...
        export COGNITO_REGION=...
        export COGNITO_USER_POOL_ID=...
        export GOOGLE_API_KEY=...
@@ -252,6 +257,14 @@ Endpoint: /v1/workbooks/list-workbooks (GET)
   - workbooks: WorkbookType[]
         
 Some miscellaneous stuff:
+
+The session middleware attaches the resolved User to the Express request (req.user). This
+requires a global augmentation of Express.Request (e.g. in a src/express.d.ts with
+'declare global { namespace Express { interface Request { user?: UserType } } }'). Because
+the server runs under ts-node — which compiles from the entry point's import graph and would
+not otherwise load a standalone .d.ts — the backend tsconfig.json must set
+'"ts-node": { "files": true }' so the augmentation is included. Without it, tsc --noEmit
+passes but ts-node fails at runtime with "Property 'user' does not exist on type 'Request'".
 
 The Express JSON body size limit is set to 20mb to accommodate base64-encoded image uploads.
 

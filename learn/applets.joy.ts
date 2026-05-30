@@ -48,7 +48,7 @@ The removeApplet function takes a single argument -- the appletId of the applet 
 AppletProps looks like this:
 
 type AppletProps = {
-    frameId: number
+    appletId: number
     height: number
     isModal: boolean
     message: any
@@ -64,8 +64,9 @@ its viewport content as children, and the geometry fields from FrameProps.
 
 The Frame component has these props:
 
-- The FrameProps fields (frameId, height, isModal, width, x, y, zIndex) for geometry
-  and identity.  It does not use message — that is for the Applet only.
+- The geometry fields (height, isModal, width, x, y, zIndex).  The Frame has no id of
+  its own — it manages its own DOM via refs and renders the headerButtons the Applet
+  supplies (including Close).  It does not use message — that is for the Applet only.
 - title: string — displayed left-aligned in the header
 - headerButtons: ReactNode — displayed right-aligned in the header
 - children: ReactNode — rendered in the viewport
@@ -78,11 +79,12 @@ The Frame has this layout:
 - Around the viewport and the header is a five-pixel border.
 - The grab spot for resizing is anywhere on the border, and anywhere five pixels inside the border.
 
-The FrameProps properties are:
+The AppletProps properties are:
 
-- appletId is a number that uniquely identifies the frame.  It is generated in the
-  addApplet function.  When it's time to remove the frame from the Canvas, the frame's frameId
-  is passed to the removeApplet function.
+- appletId is a number that uniquely identifies the applet.  It is generated in the
+  addApplet function and passed to the Applet via AppletProps.  When it's time to remove
+  the applet from the Canvas, the Applet passes its appletId to the removeApplet function
+  (e.g. from its Close header button).
 
 - height is the initial height of the Frame's viewport in pixels.  Defaults to 600
 
