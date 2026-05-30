@@ -16,8 +16,8 @@ if [[ "$(uname)" == "Darwin" ]]; then
     FRONTEND_CONFIG="$HOME/lucy-config/FrontendLocalConfig.json"
     BACKEND_CONFIG="$HOME/lucy-config/BackendLocalConfig.json"
 else
-    FRONTEND_CONFIG="/mount/lucy-config/FrontendProdConfig.json"
-    BACKEND_CONFIG="/mount/lucy-config/BackendProdConfig.json"
+    FRONTEND_CONFIG="/home/ubuntu/lucy-config/FrontendProdConfig.json"
+    BACKEND_CONFIG="/home/ubuntu/lucy-config/BackendProdConfig.json"
 fi
 
 # 5. Export Vite environment variables from the frontend config, then install + build the

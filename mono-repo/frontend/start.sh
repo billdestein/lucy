@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [[ "$(uname)" == "Darwin" ]]; then
     FRONTEND_CONFIG="$HOME/lucy-config/FrontendLocalConfig.json"
 else
-    FRONTEND_CONFIG="/mount/lucy-config/FrontendProdConfig.json"
+    FRONTEND_CONFIG="/home/ubuntu/lucy-config/FrontendProdConfig.json"
 fi
 
 # Export the Vite environment variables. In dev, Vite reads these from the shell at server

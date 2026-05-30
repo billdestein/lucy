@@ -29,7 +29,7 @@ exports environment variables, and starts the Express server. Here is what it do
 
 4. Select config files based on OS:
    - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json
-   - Linux:  /mount/lucy-config/FrontendProdConfig.json and /mount/lucy-config/BackendProdConfig.json
+   - Linux:  /home/ubuntu/lucy-config/FrontendProdConfig.json and /home/ubuntu/lucy-config/BackendProdConfig.json
 
 5. Export Vite environment variables from the frontend config, then install + build the
    frontend. Vite bakes these values into the JS bundle at build time, so they must be set
@@ -57,7 +57,7 @@ exports environment variables, and starts the Express server. Here is what it do
 
 The startup checks where it is running.
 If running on MacOS, it reads the file ~/lucy-config/BackendLocalConfig.json.
-If running on Linux,  it reads the file /mount/lucy-config/BackendProdConfig.json.
+If running on Linux,  it reads the file /home/ubuntu/lucy-config/BackendProdConfig.json.
 
 Both files contains a single json object with these properties:
 
@@ -300,7 +300,7 @@ The start.sh builds the frontend before starting the server. Because Vite bakes 
 variables into the JS bundle at build time, the start.sh must read the frontend config and
 export VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID before running the frontend build.
 The frontend config paths are the same as in frontend/start.sh: ~/lucy-config/FrontendLocalConfig.json
-on MacOS and /mount/lucy-config/FrontendProdConfig.json on Linux.
+on MacOS and /home/ubuntu/lucy-config/FrontendProdConfig.json on Linux.
 
 After setting the VITE vars, it runs:
 
