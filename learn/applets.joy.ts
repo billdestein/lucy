@@ -79,6 +79,12 @@ The Frame has this layout:
 - Around the viewport and the header is a five-pixel border.
 - The grab spot for resizing is anywhere on the border, and anywhere five pixels inside the border.
 
+The Frame uses a dark chrome theme. These colors must be distinct so the border is actually
+visible — do NOT make the border the same color as the viewport background, or it disappears:
+- the five-pixel border is #444444 (a visible mid-gray window edge)
+- the header (grab bar) background is #2d2d2d with #dddddd text
+- the viewport background is #1e1e1e
+
 The AppletProps properties are:
 
 - appletId is a number that uniquely identifies the applet.  It is generated in the
