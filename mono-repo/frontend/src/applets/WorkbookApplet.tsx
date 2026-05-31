@@ -44,13 +44,17 @@ export function WorkbookApplet(props: AppletProps) {
                     `/v1/workbooks/get-workbook?workbookName=${encodeURIComponent(workbookName)}`
                 )
                 const hydrated = await hydrateFromBackend(wb)
-                const normalized =
-                    hydrated.prompts.length === 0
-                        ? {
-                              ...hydrated,
-                              prompts: [{ createdAt: Date.now(), focused: true, text: '' }],
-                          }
-                        : hydrated
+                // The backend stores only the history of run prompts; the trailing empty
+                // placeholder is never persisted. Reconstruct it on open: drop any empties,
+                // unfocus the history, then append a fresh empty focused prompt so the
+                // paginator lands on the placeholder (e.g. "2 of 2") rather than the last run.
+                const history = hydrated.prompts
+                    .filter((p) => p.text.trim() !== '')
+                    .map((p) => ({ ...p, focused: false }))
+                const normalized = {
+                    ...hydrated,
+                    prompts: [...history, { createdAt: Date.now(), focused: true, text: '' }],
+                }
                 if (!cancelled) {
                     setWorkbook(normalized)
                     setSelectedPicFilename(normalized.focusedPicFilename ?? 'empty')

@@ -1,4 +1,5 @@
 import { ReactNode, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 type Props = {
     icon: ReactNode
@@ -8,7 +9,10 @@ type Props = {
 
 // Zero or more of these are placed, right aligned, in a ComposerButtonRowComponent. The
 // tooltip appears immediately below the icon and is position:fixed so it can extend beyond
-// the frame's bottom border.
+// the frame's bottom border. It is rendered in a portal to document.body so it escapes any
+// transformed ancestor (e.g. the paginator's translateX): a transform establishes a
+// containing block for fixed-position descendants, which would otherwise mis-anchor the
+// tooltip and let it contribute to the frame's scroll overflow (causing scrollbar flicker).
 export function ComposerButtonComponent({ icon, handler, tooltipLabel }: Props) {
     const ref = useRef<HTMLDivElement>(null)
     const [hover, setHover] = useState(false)
@@ -42,27 +46,29 @@ export function ComposerButtonComponent({ icon, handler, tooltipLabel }: Props) 
             }}
         >
             {icon}
-            {hover && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        left: coords.left,
-                        top: coords.top,
-                        transform: 'translate(-50%, 0)',
-                        marginTop: 6,
-                        background: '#000000',
-                        color: '#ffffff',
-                        padding: '3px 7px',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        whiteSpace: 'nowrap',
-                        pointerEvents: 'none',
-                        zIndex: 100000,
-                    }}
-                >
-                    {tooltipLabel}
-                </div>
-            )}
+            {hover &&
+                createPortal(
+                    <div
+                        style={{
+                            position: 'fixed',
+                            left: coords.left,
+                            top: coords.top,
+                            transform: 'translate(-50%, 0)',
+                            marginTop: 6,
+                            background: '#000000',
+                            color: '#ffffff',
+                            padding: '3px 7px',
+                            borderRadius: 4,
+                            fontSize: 12,
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                            zIndex: 100000,
+                        }}
+                    >
+                        {tooltipLabel}
+                    </div>,
+                    document.body,
+                )}
         </div>
     )
 }

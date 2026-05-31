@@ -1,12 +1,17 @@
 import { useWorkbook } from '../WorkbookContext'
 import { PicComponent } from './PicComponent'
 
-// Iterates over the workbook's pics, sorted by createdAt descending (newest first). The
-// empty sentinel (filename 'empty') is displayed as '+ New image'.
+// Iterates over the workbook's pics. The empty sentinel (filename 'empty'), displayed as
+// '+ New image', is always pinned to the top; the remaining pics follow, sorted by createdAt
+// descending (newest first).
 export function PicListComponent() {
     const { workbook, selectedPicFilename, setSelectedPicFilename, setWorkbook } = useWorkbook()
 
-    const sorted = [...workbook.pics].sort((a, b) => b.createdAt - a.createdAt)
+    const sorted = [...workbook.pics].sort((a, b) => {
+        if (a.filename === 'empty') return -1
+        if (b.filename === 'empty') return 1
+        return b.createdAt - a.createdAt
+    })
 
     return (
         <div style={{ height: '100%', overflow: 'auto', background: '#252526' }}>

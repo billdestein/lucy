@@ -23,10 +23,13 @@ and selectedPicFilename and its setter are held in this context.  PicListCompone
 ViewerComponent, and ComposerComponent access the workbook through the context, not
 through props.
 
-After loading the workbook from the backend, if the workbook has no prompts, the
-WorkbookApplet adds a single empty focused prompt before storing it in context.  This
-normalizes workbooks that were created before the backend was updated to include an
-initial prompt.
+After loading the workbook from the backend, the WorkbookApplet normalizes its prompts
+before storing it in context.  The backend persists only the history of run prompts; the
+trailing empty placeholder prompt is never saved.  So on open, the WorkbookApplet drops any
+empty prompts, sets all remaining prompts to unfocused, and then appends a single empty
+focused prompt (createdAt: Date.now(), focused: true, text: '').  This guarantees the
+paginator opens on the empty placeholder (e.g. "2 of 2") rather than on the last run prompt,
+and also normalizes workbooks created before the backend included an initial prompt.
 
 The frame header has these FrameHeaderButtonComponents (left to right):
 
