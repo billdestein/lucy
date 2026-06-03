@@ -46,11 +46,15 @@ exports environment variables, and starts the Express server. Here is what it do
        export COGNITO_CLIENT_ID=...
        export COGNITO_REGION=...
        export COGNITO_USER_POOL_ID=...
+       export EXPRESS_PORT=...
        export GOOGLE_API_KEY=...
        export MOUNT_DIR=...
        export ORIGIN=...
        export REDIS_HOST=...
        export REDIS_PORT=...
+   EXPRESS_PORT is optional. Extract it with jq using the '// empty' alternative
+   (jq -r '.EXPRESS_PORT // empty') so an absent key exports an empty string rather than
+   the literal "null" — that keeps the backend's 8080 default working when the key is missing.
 
 7. Start the server:
        npx ts-node "$SCRIPT_DIR/src/server.ts"
@@ -64,6 +68,7 @@ Both files contains a single json object with these properties:
 - COGNITO_CLIENT_ID
 - COGNITO_REGION
 - COGNITO_USER_POOL_ID
+- EXPRESS_PORT
 - GOOGLE_API_KEY
 - MOUNT_DIR
 - ORIGIN
@@ -72,7 +77,8 @@ Both files contains a single json object with these properties:
 
 Each is assigned to en environment variable with the same name.
 
-The backend server listens on port 8080.
+The backend server listens on the port given by the EXPRESS_PORT environment variable.
+EXPRESS_PORT is optional; when it is absent or empty, the backend defaults to port 8080.
 
 The backend code has an in-memory map of email to User object.
 
