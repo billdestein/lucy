@@ -71,4 +71,7 @@ What happens as the system grows? Right now the spec files fit comfortably in a 
 
 Overall: it's a serious experiment in making AI a first-class participant in software design rather than just an implementation tool. Worth continuing.
 
+
+
 ✻ Crunched for 3m 11s
+
