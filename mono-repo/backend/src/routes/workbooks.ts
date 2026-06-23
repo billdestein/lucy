@@ -1,24 +1,29 @@
-import { Router } from 'express'
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import { PicType, WorkbookType } from '@billdestein/lucy-common'
-import { asyncHandler } from '../middleware/session'
+import { Router, Request } from 'express'
+import fs from 'fs'
+import path from 'path'
+import { PicType, PromptType, WorkbookType } from '@billdestein/lucy-common'
 import {
     ensureDir,
-    listWorkbooks,
-    readWorkbook,
     workbookDir,
+    readWorkbook,
     writeWorkbook,
+    listWorkbooks,
 } from '../services/files'
 import { generateImageFromText, mutateImage } from '../services/gemini'
 
-export const workbooksRouter = Router()
+const router = Router()
 
-// Strip comment ('//') and command ('--') lines from a prompt, leaving the free-form text.
-function buildPromptText(text: string): string {
+// The session middleware guarantees req.user is set for every route here.
+function slugOf(req: Request): string {
+    return req.user!.slug
+}
+
+// Strip comment lines ('//') and command lines ('--') from a prompt, leaving the text to
+// send to Gemini.
+function promptTextFrom(text: string): string {
     return text
         .split('\n')
-        .filter((line) => {
+        .filter(line => {
             const t = line.trim()
             return !t.startsWith('//') && !t.startsWith('--')
         })
@@ -26,243 +31,202 @@ function buildPromptText(text: string): string {
         .trim()
 }
 
-// POST /v1/workbooks/create-workbook
-workbooksRouter.post(
-    '/create-workbook',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbookName } = req.body as { workbookName: string }
-        const now = Date.now()
-        await ensureDir(workbookDir(slug, workbookName))
-        const workbook: WorkbookType = {
-            createdAt: now,
-            focusedPicFilename: 'empty',
-            pics: [{ createdAt: now, encodedImage: '', filename: 'empty', mimeType: '' }],
-            prompts: [{ createdAt: now, focused: true, text: '' }],
-            workbookName,
+// POST /v1/workbooks/create-workbook -> {}
+router.post('/create-workbook', (req, res) => {
+    const { workbookName } = req.body as { workbookName: string }
+    const slug = slugOf(req)
+    ensureDir(workbookDir(slug, workbookName))
+
+    const now = Date.now()
+    const workbook: WorkbookType = {
+        createdAt: now,
+        focusedPicFilename: 'empty',
+        // A single empty sentinel pic and a single empty focused prompt.
+        pics: [{ createdAt: now, encodedImage: '', filename: 'empty', mimeType: '' }],
+        prompts: [{ createdAt: now, focused: true, text: '' }],
+        workbookName,
+    }
+    writeWorkbook(slug, workbook)
+    res.json({})
+})
+
+// POST /v1/workbooks/clone-workbook -> {}
+router.post('/clone-workbook', (req, res) => {
+    const { workbook, newWorkbookName } = req.body as {
+        workbook: WorkbookType
+        newWorkbookName: string
+    }
+    const slug = slugOf(req)
+    const srcDir = workbookDir(slug, workbook.workbookName)
+    const dstDir = workbookDir(slug, newWorkbookName)
+    ensureDir(dstDir)
+
+    // Copy all pic files, skipping the empty sentinel.
+    for (const pic of workbook.pics) {
+        if (pic.filename === 'empty' || pic.mimeType === '') continue
+        const srcFile = path.join(srcDir, pic.filename)
+        const dstFile = path.join(dstDir, pic.filename)
+        if (fs.existsSync(srcFile)) fs.copyFileSync(srcFile, dstFile)
+    }
+
+    const clone: WorkbookType = {
+        createdAt: Date.now(),
+        focusedPicFilename: workbook.focusedPicFilename,
+        pics: workbook.pics.map(p => ({ ...p, encodedImage: '' })),
+        prompts: workbook.prompts,
+        workbookName: newWorkbookName,
+    }
+    writeWorkbook(slug, clone)
+    res.json({})
+})
+
+// POST /v1/workbooks/delete-pic -> {}
+router.post('/delete-pic', (req, res) => {
+    const { workbook, picName } = req.body as { workbook: WorkbookType; picName: string }
+    const slug = slugOf(req)
+
+    const wb = readWorkbook(slug, workbook.workbookName)
+    wb.pics = wb.pics.filter(p => p.filename !== picName)
+    if (wb.focusedPicFilename === picName) wb.focusedPicFilename = 'empty'
+    writeWorkbook(slug, wb)
+
+    const file = path.join(workbookDir(slug, workbook.workbookName), picName)
+    if (fs.existsSync(file)) fs.unlinkSync(file)
+
+    res.json({})
+})
+
+// POST /v1/workbooks/delete-workbook -> { workbooks: WorkbookType[] }
+router.post('/delete-workbook', (req, res) => {
+    const { workbookName } = req.body as { workbookName: string }
+    const slug = slugOf(req)
+    const dir = workbookDir(slug, workbookName)
+    if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true })
+    res.json({ workbooks: listWorkbooks(slug) })
+})
+
+// POST /v1/workbooks/generate-pic -> { workbook: WorkbookType }
+router.post('/generate-pic', async (req, res) => {
+    const { outputFilename, workbook } = req.body as {
+        referencedPics: PicType[]
+        outputFilename: string
+        workbook: WorkbookType
+    }
+    const slug = slugOf(req)
+
+    try {
+        const focused = workbook.prompts.find((p: PromptType) => p.focused)
+        const promptText = promptTextFrom(focused ? focused.text : '')
+
+        let bytes: Buffer
+        const focusedPic = workbook.focusedPicFilename
+        if (!focusedPic || focusedPic === 'empty') {
+            // Text-to-image generation.
+            bytes = await generateImageFromText(promptText)
+        } else {
+            // Image mutation: read the source pic, base64-encode it, and mutate.
+            const srcPath = path.join(workbookDir(slug, workbook.workbookName), focusedPic)
+            const sourceBytes = fs.readFileSync(srcPath).toString('base64')
+            bytes = await mutateImage(sourceBytes, promptText)
         }
-        await writeWorkbook(slug, workbook)
-        res.status(200).json({})
-    })
-)
 
-// POST /v1/workbooks/clone-workbook
-workbooksRouter.post(
-    '/clone-workbook',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbook, newWorkbookName } = req.body as {
-            workbook: WorkbookType
-            newWorkbookName: string
-        }
-        await ensureDir(workbookDir(slug, newWorkbookName))
+        // Write the new image to disk.
+        const outPath = path.join(workbookDir(slug, workbook.workbookName), outputFilename)
+        fs.writeFileSync(outPath, bytes)
 
-        // Copy all pic files (skipping the empty sentinel) to the new directory.
-        for (const pic of workbook.pics) {
-            if (!pic.mimeType || pic.filename === 'empty') continue
-            const src = path.join(workbookDir(slug, workbook.workbookName), pic.filename)
-            const dst = path.join(workbookDir(slug, newWorkbookName), pic.filename)
-            try {
-                await fs.copyFile(src, dst)
-            } catch {
-                // Skip files that are missing on disk.
-            }
-        }
-
-        const clone: WorkbookType = {
-            createdAt: Date.now(),
-            focusedPicFilename: workbook.focusedPicFilename,
-            pics: workbook.pics,
-            prompts: workbook.prompts,
-            workbookName: newWorkbookName,
-        }
-        await writeWorkbook(slug, clone)
-        res.status(200).json({})
-    })
-)
-
-// POST /v1/workbooks/delete-pic
-workbooksRouter.post(
-    '/delete-pic',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbook, picName } = req.body as { workbook: WorkbookType; picName: string }
-        const wb = await readWorkbook(slug, workbook.workbookName)
-        wb.pics = wb.pics.filter((p) => p.filename !== picName)
-        await writeWorkbook(slug, wb)
-        try {
-            await fs.unlink(path.join(workbookDir(slug, wb.workbookName), picName))
-        } catch {
-            // File may already be gone.
-        }
-        res.status(200).json({})
-    })
-)
-
-// POST /v1/workbooks/delete-workbook
-workbooksRouter.post(
-    '/delete-workbook',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbookName } = req.body as { workbookName: string }
-        await fs.rm(workbookDir(slug, workbookName), { recursive: true, force: true })
-        const workbooks = await listWorkbooks(slug)
-        res.status(200).json({ workbooks })
-    })
-)
-
-// POST /v1/workbooks/generate-pic
-workbooksRouter.post(
-    '/generate-pic',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { outputFilename, workbook } = req.body as {
-            referencedPics: PicType[]
-            outputFilename: string
-            workbook: WorkbookType
-        }
-
-        try {
-            const focused = workbook.prompts.find((p) => p.focused)
-            const promptText = buildPromptText(focused?.text ?? '')
-
-            let bytes: Buffer
-            const focusedPic = workbook.focusedPicFilename
-            if (!focusedPic || focusedPic === 'empty') {
-                // Text-to-image generation.
-                bytes = await generateImageFromText(promptText)
-            } else {
-                // Image mutation: read the source pic and base64-encode it.
-                const srcPath = path.join(workbookDir(slug, workbook.workbookName), focusedPic)
-                const srcBytes = await fs.readFile(srcPath)
-                bytes = await mutateImage(srcBytes.toString('base64'), promptText)
-            }
-
-            const outPath = path.join(workbookDir(slug, workbook.workbookName), outputFilename)
-            await fs.writeFile(outPath, bytes)
-
-            const newPic: PicType = {
-                createdAt: Date.now(),
-                encodedImage: '',
-                filename: outputFilename,
-                mimeType: 'image/png',
-            }
-
-            // Upsert: replace in place if a pic with the same filename exists, else append.
-            const idx = workbook.pics.findIndex((p) => p.filename === outputFilename)
-            if (idx >= 0) {
-                workbook.pics[idx] = newPic
-            } else {
-                workbook.pics.push(newPic)
-            }
-            workbook.focusedPicFilename = outputFilename
-
-            await writeWorkbook(slug, workbook)
-            res.status(200).json({ workbook })
-        } catch (err: any) {
-            console.error('generate-pic error', err)
-            res.status(500).json({ error: err.message || String(err) })
-        }
-    })
-)
-
-// POST /v1/workbooks/upload-pic
-workbooksRouter.post(
-    '/upload-pic',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbookName, imageFilename, imageData, mimeType } = req.body as {
-            workbookName: string
-            imageFilename: string
-            imageData: string
-            mimeType: string
-        }
-        await fs.writeFile(
-            path.join(workbookDir(slug, workbookName), imageFilename),
-            Buffer.from(imageData, 'base64')
-        )
-        const wb = await readWorkbook(slug, workbookName)
-        wb.pics.push({
+        // Upsert the new PicType into the workbook (replace in place if it exists).
+        const newPic: PicType = {
             createdAt: Date.now(),
             encodedImage: '',
-            filename: imageFilename,
-            mimeType,
-        })
-        wb.focusedPicFilename = imageFilename
-        await writeWorkbook(slug, wb)
-        res.status(200).json({ workbook: wb })
-    })
-)
-
-// POST /v1/workbooks/upload-pic-from-url
-workbooksRouter.post(
-    '/upload-pic-from-url',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const { workbookName, imageUrl, imageFilename } = req.body as {
-            workbookName: string
-            imageUrl: string
-            imageFilename: string
+            filename: outputFilename,
+            mimeType: 'image/png',
         }
+        const idx = workbook.pics.findIndex(p => p.filename === outputFilename)
+        if (idx >= 0) workbook.pics[idx] = newPic
+        else workbook.pics.push(newPic)
 
-        let response: Response
-        try {
-            response = await fetch(imageUrl)
-        } catch (err: any) {
-            res.status(502).json({ error: err.message || String(err) })
-            return
-        }
+        workbook.focusedPicFilename = outputFilename
+        writeWorkbook(slug, workbook)
+        res.json({ workbook })
+    } catch (err: any) {
+        console.error('generate-pic error:', err)
+        res.status(500).json({ error: err?.message || 'Image generation failed' })
+    }
+})
+
+// POST /v1/workbooks/upload-pic -> { workbook: WorkbookType }
+router.post('/upload-pic', (req, res) => {
+    const { workbookName, imageFilename, imageData, mimeType } = req.body as {
+        workbookName: string
+        imageFilename: string
+        imageData: string
+        mimeType: string
+    }
+    const slug = slugOf(req)
+
+    const bytes = Buffer.from(imageData, 'base64')
+    fs.writeFileSync(path.join(workbookDir(slug, workbookName), imageFilename), bytes)
+
+    const wb = readWorkbook(slug, workbookName)
+    wb.pics.push({ createdAt: Date.now(), encodedImage: '', filename: imageFilename, mimeType })
+    wb.focusedPicFilename = imageFilename
+    writeWorkbook(slug, wb)
+    res.json({ workbook: wb })
+})
+
+// POST /v1/workbooks/upload-pic-from-url -> { workbook: WorkbookType }
+router.post('/upload-pic-from-url', async (req, res) => {
+    const { workbookName, imageUrl, imageFilename } = req.body as {
+        workbookName: string
+        imageUrl: string
+        imageFilename: string
+    }
+    const slug = slugOf(req)
+
+    try {
+        // Fetch the image server-side using Node's native fetch (no CORS issues).
+        const response = await fetch(imageUrl)
         if (!response.ok) {
-            res.status(502).json({ error: `Fetch failed with status ${response.status}` })
+            res.status(502).json({ error: `Fetch failed: ${response.status} ${response.statusText}` })
             return
         }
-
-        const mimeType = response.headers.get('content-type') || 'image/png'
+        const mimeType = response.headers.get('content-type') || 'application/octet-stream'
         const bytes = Buffer.from(await response.arrayBuffer())
-        await fs.writeFile(path.join(workbookDir(slug, workbookName), imageFilename), bytes)
+        fs.writeFileSync(path.join(workbookDir(slug, workbookName), imageFilename), bytes)
 
-        const wb = await readWorkbook(slug, workbookName)
-        wb.pics.push({
-            createdAt: Date.now(),
-            encodedImage: '',
-            filename: imageFilename,
-            mimeType,
-        })
+        const wb = readWorkbook(slug, workbookName)
+        wb.pics.push({ createdAt: Date.now(), encodedImage: '', filename: imageFilename, mimeType })
         wb.focusedPicFilename = imageFilename
-        await writeWorkbook(slug, wb)
-        res.status(200).json({ workbook: wb })
-    })
-)
+        writeWorkbook(slug, wb)
+        res.json({ workbook: wb })
+    } catch (err: any) {
+        console.error('upload-pic-from-url error:', err)
+        res.status(502).json({ error: err?.message || 'Failed to fetch image' })
+    }
+})
 
-// GET /v1/workbooks/get-pic
-workbooksRouter.get(
-    '/get-pic',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const workbookName = req.query.workbookName as string
-        const picFilename = req.query.picFilename as string
-        const bytes = await fs.readFile(path.join(workbookDir(slug, workbookName), picFilename))
-        res.status(200).json({ encodedImage: bytes.toString('base64') })
-    })
-)
+// GET /v1/workbooks/get-pic -> { encodedImage: string }
+router.get('/get-pic', (req, res) => {
+    const { workbookName, picFilename } = req.query as {
+        workbookName: string
+        picFilename: string
+    }
+    const slug = slugOf(req)
+    const file = path.join(workbookDir(slug, workbookName), picFilename)
+    const encodedImage = fs.readFileSync(file).toString('base64')
+    res.json({ encodedImage })
+})
 
-// GET /v1/workbooks/get-workbook
-workbooksRouter.get(
-    '/get-workbook',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const workbookName = req.query.workbookName as string
-        const workbook = await readWorkbook(slug, workbookName)
-        res.status(200).json(workbook)
-    })
-)
+// GET /v1/workbooks/get-workbook -> bare WorkbookType (NOT wrapped)
+router.get('/get-workbook', (req, res) => {
+    const { workbookName } = req.query as { workbookName: string }
+    const slug = slugOf(req)
+    res.json(readWorkbook(slug, workbookName))
+})
 
-// GET /v1/workbooks/list-workbooks
-workbooksRouter.get(
-    '/list-workbooks',
-    asyncHandler(async (req, res) => {
-        const slug = req.user!.slug
-        const workbooks = await listWorkbooks(slug)
-        res.status(200).json({ workbooks })
-    })
-)
+// GET /v1/workbooks/list-workbooks -> { workbooks: WorkbookType[] }
+router.get('/list-workbooks', (req, res) => {
+    res.json({ workbooks: listWorkbooks(slugOf(req)) })
+})
+
+export default router

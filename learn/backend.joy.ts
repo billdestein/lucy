@@ -28,7 +28,7 @@ exports environment variables, and starts the Express server. Here is what it do
        cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
 
 4. Select config files based on OS:
-   - macOS:  ~/lucy-config/FrontendLocalConfig.json and ~/lucy-config/BackendLocalConfig.json
+   - macOS:  ~/git/billdestein/lucy-config/FrontendLocalConfig.json and ~/git/billdestein/lucy-config/BackendLocalConfig.json
    - Linux:  /home/ubuntu/lucy-config/FrontendProdConfig.json and /home/ubuntu/lucy-config/BackendProdConfig.json
 
 5. Export Vite environment variables from the frontend config, then install + build the
@@ -60,7 +60,7 @@ exports environment variables, and starts the Express server. Here is what it do
        npx ts-node "$SCRIPT_DIR/src/server.ts"
 
 The startup checks where it is running.
-If running on MacOS, it reads the file ~/lucy-config/BackendLocalConfig.json.
+If running on MacOS, it reads the file ~/git/billdestein/lucy-config/BackendLocalConfig.json.
 If running on Linux,  it reads the file /home/ubuntu/lucy-config/BackendProdConfig.json.
 
 Both files contains a single json object with these properties:
@@ -305,7 +305,7 @@ client-side routing works when users load a URL directly.
 The start.sh builds the frontend before starting the server. Because Vite bakes environment
 variables into the JS bundle at build time, the start.sh must read the frontend config and
 export VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID before running the frontend build.
-The frontend config paths are the same as in frontend/start.sh: ~/lucy-config/FrontendLocalConfig.json
+The frontend config paths are the same as in frontend/start.sh: ~/git/billdestein/lucy-config/FrontendLocalConfig.json
 on MacOS and /home/ubuntu/lucy-config/FrontendProdConfig.json on Linux.
 
 After setting the VITE vars, it runs:

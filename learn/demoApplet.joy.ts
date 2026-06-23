@@ -7,7 +7,8 @@ The DemoApplet is a React component.
 
 The initial frame dimensions are 1112 x 625.
 
-The frame's viewport contains an iframe with this src:
+The frame's viewport contains an iframe (intentionally an iframe, not a video element)
+with this src:
 https://s3.us-west-2.amazonaws.com/billdestein.videos/lucy-v3.mp4
 
 The video's native dimensions are 1112 x 625 (aspect ratio 1112/625).

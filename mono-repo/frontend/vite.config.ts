@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // In development, proxy /v1/* to the Express backend on port 8080. In production, Express
-// serves the built bundle from dist/ so relative /v1 URLs hit the same origin.
+// serves the built bundle from dist/, so relative /v1 URLs hit Express directly.
 export default defineConfig({
     plugins: [react()],
     server: {

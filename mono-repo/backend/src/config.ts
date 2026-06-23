@@ -1,34 +1,23 @@
-import * as os from 'os'
+import os from 'os'
+import path from 'path'
 
 // MOUNT_DIR may begin with ~. Tilde is not expanded when bash assigns environment variables
-// from jq output, so the backend must expand it explicitly: replace a leading ~ with
-// os.homedir() before constructing any file path.
+// from jq output, so we expand it explicitly here.
 function expandTilde(p: string): string {
-    if (p.startsWith('~')) return os.homedir() + p.slice(1)
+    if (p === '~') return os.homedir()
+    if (p.startsWith('~/')) return path.join(os.homedir(), p.slice(2))
     return p
 }
 
-function reqEnv(name: string): string {
-    const v = process.env[name]
-    if (v === undefined || v === '') {
-        throw new Error(`Missing required environment variable ${name}`)
-    }
-    return v
-}
-
 export const config = {
-    cognitoClientId: reqEnv('COGNITO_CLIENT_ID'),
-    cognitoRegion: reqEnv('COGNITO_REGION'),
-    cognitoUserPoolId: reqEnv('COGNITO_USER_POOL_ID'),
-    googleApiKey: reqEnv('GOOGLE_API_KEY'),
-    mountDir: expandTilde(reqEnv('MOUNT_DIR')),
-    origin: reqEnv('ORIGIN'),
-    redisHost: reqEnv('REDIS_HOST'),
-    redisPort: parseInt(reqEnv('REDIS_PORT'), 10),
+    cognitoClientId: process.env.COGNITO_CLIENT_ID || '',
+    cognitoRegion: process.env.COGNITO_REGION || '',
+    cognitoUserPoolId: process.env.COGNITO_USER_POOL_ID || '',
+    // EXPRESS_PORT is optional; default to 8080 when absent or empty.
+    expressPort: parseInt(process.env.EXPRESS_PORT || '8080', 10),
+    googleApiKey: process.env.GOOGLE_API_KEY || '',
+    mountDir: expandTilde(process.env.MOUNT_DIR || ''),
+    origin: process.env.ORIGIN || '',
+    redisHost: process.env.REDIS_HOST || 'localhost',
+    redisPort: parseInt(process.env.REDIS_PORT || '6379', 10),
 }
-
-// ElastiCache Serverless requires TLS; local Redis does not support it.
-export const isLocalRedis = config.redisHost === 'localhost' || config.redisHost === '127.0.0.1'
-
-// Cookies must be marked secure only when served over https (production behind the ALB).
-export const isHttps = config.origin.startsWith('https')

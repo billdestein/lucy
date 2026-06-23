@@ -9,8 +9,10 @@ The ViewerComponent takes no props.  It reads workbook, isLoading and selectedPi
 from WorkbookContext via useWorkbook().
 
 The ViewerComponent displays the pic whose filename matches selectedPicFilename from
-WorkbookContext, falling back to the last pic in workbook.pics if none is selected.
-Shows a black box if there are no pics.
+WorkbookContext.  If no pic matches, it falls back to the last element of the
+workbook.pics array (workbook.pics[workbook.pics.length - 1]) — the raw array order as
+stored, NOT the newest by createdAt and NOT the sort order PicListComponent uses for
+display.  Shows a black box if there are no pics.
 
 The image is centered in the space allocated for the ViewerComponent.  
 
@@ -21,7 +23,7 @@ The image has a context menu with these options:
 
 - "Download image": download the image as is typical in web apps.
 
-- "Save as pic": does alert('save')
+- "Save as pic": intentional stub for now — does alert('save') and nothing else.
 
 - "Zoom": adds a ZoomApplet to the canvas.  The encoded image and mime type are passed via
   AppletProps.message (message.encodedImage, message.mimeType), not as React props.

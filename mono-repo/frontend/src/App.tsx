@@ -1,78 +1,100 @@
-import { useEffect, useRef, useState } from 'react'
-import { setCanvas } from '@billdestein/lucy-applets'
-import { getIdToken, handleRedirectCallback, signIn } from './auth'
-import { loginToBackend } from './api'
-import { MainMenuComponent } from './components/MainMenuComponent'
-import { openWorkbookList } from './launchers'
+import { CSSProperties, useEffect, useRef, useState } from 'react'
+import { setCanvas, addApplet } from '@billdestein/lucy-applets'
+import { backendLogin, handleRedirectCallback, isAuthenticated, signIn, signUp } from './auth'
+import { MainMenuComponent } from './MainMenuComponent'
+import { WorkbookListApplet } from './WorkbookListApplet'
+
+const CANVAS_ID = 'lucy-canvas'
 
 type Phase = 'loading' | 'signin' | 'authed'
 
+// Shared style for the landing-page Sign Up / Sign In buttons.
+const authButtonStyle: CSSProperties = {
+    background: 'transparent',
+    border: '1px solid gold',
+    color: 'gold',
+    fontSize: 13,
+    fontFamily: 'sans-serif',
+    padding: '4px 14px',
+    borderRadius: 4,
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+}
+
+function AuthButton({ label, onClick }: { label: string; onClick: () => void }) {
+    return (
+        <button
+            style={authButtonStyle}
+            onClick={onClick}
+            onMouseEnter={e => {
+                e.currentTarget.style.background = 'gold'
+                e.currentTarget.style.color = 'black'
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.color = 'gold'
+            }}
+        >
+            {label}
+        </button>
+    )
+}
+
 export function App() {
     const [phase, setPhase] = useState<Phase>('loading')
+    const [chunkReady, setChunkReady] = useState(false)
+    const [signingIn, setSigningIn] = useState(false)
+    const canvasInitialized = useRef(false)
 
     useEffect(() => {
+        // Preload the WorkbookApplet chunk immediately.
+        import('./WorkbookApplet')
+            .then(() => setChunkReady(true))
+            .catch(() => setChunkReady(true))
         ;(async () => {
             try {
                 if (window.location.search.includes('code=')) {
-                    const handled = await handleRedirectCallback()
-                    if (handled) {
-                        await loginToBackend()
-                        setPhase('authed')
-                        return
-                    }
+                    await handleRedirectCallback()
                 }
-                if (getIdToken()) {
-                    await loginToBackend()
-                    setPhase('authed')
-                    return
+            } catch (e) {
+                console.error('OIDC callback failed', e)
+            }
+            if (isAuthenticated()) {
+                try {
+                    await backendLogin()
+                } catch (e) {
+                    console.error('Backend login failed', e)
                 }
-                setPhase('signin')
-            } catch (err) {
-                console.error('Auth init failed', err)
+                setPhase('authed')
+            } else {
                 setPhase('signin')
             }
         })()
     }, [])
 
-    return (
-        <>
-            <style>{`@keyframes lucy-spin { to { transform: rotate(360deg); } }`}</style>
-            {phase === 'authed' ? <AuthedApp /> : <Splash showSignIn={phase === 'signin'} />}
-        </>
-    )
-}
-
-function AuthedApp() {
-    const canvasRef = useRef<HTMLDivElement>(null)
-
+    // After login, set up the canvas and add the initial WorkbookListApplet.
     useEffect(() => {
-        setCanvas('lucy-canvas')
-        // Immediately after login, add a WorkbookListApplet to the canvas.
-        void openWorkbookList()
-    }, [])
+        if (phase === 'authed' && !canvasInitialized.current) {
+            canvasInitialized.current = true
+            setCanvas(CANVAS_ID)
+            addApplet(WorkbookListApplet, { message: {} })
+        }
+    }, [phase])
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <MainMenuComponent />
-            <div
-                id="lucy-canvas"
-                ref={canvasRef}
-                style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#121212' }}
-            />
-        </div>
-    )
-}
+    if (phase === 'authed') {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                <MainMenuComponent />
+                <div
+                    id={CANVAS_ID}
+                    style={{ position: 'relative', flex: '1 1 auto', overflow: 'hidden', background: '#101010' }}
+                />
+            </div>
+        )
+    }
 
-// Black window with "Lucy" centered. While the WorkbookApplet chunk preloads, a gold spinner
-// shows; once ready (and once auth state is known) the Sign In button appears.
-function Splash({ showSignIn }: { showSignIn: boolean }) {
-    const [chunkReady, setChunkReady] = useState(false)
-
-    useEffect(() => {
-        import('./applets/WorkbookApplet')
-            .then(() => setChunkReady(true))
-            .catch(() => setChunkReady(true))
-    }, [])
+    const showSpinner = !chunkReady || phase === 'loading'
+    const showButtons = chunkReady && phase === 'signin' && !signingIn
 
     return (
         <div
@@ -86,57 +108,35 @@ function Splash({ showSignIn }: { showSignIn: boolean }) {
                 justifyContent: 'center',
             }}
         >
-            <div style={{ color: 'gold', fontSize: 100, fontFamily: '"Great Vibes", cursive' }}>
+            <div
+                style={{
+                    color: 'gold',
+                    fontFamily: "'Great Vibes', cursive",
+                    fontSize: 100,
+                    lineHeight: 1,
+                }}
+            >
                 Lucy
             </div>
-            {!chunkReady || !showSignIn ? <Spinner /> : <SignInButton />}
+            {showSpinner && <div className="lucy-gold-spinner" />}
+            {showButtons && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
+                    <AuthButton
+                        label="Sign Up"
+                        onClick={() => {
+                            setSigningIn(true)
+                            signUp()
+                        }}
+                    />
+                    <AuthButton
+                        label="Sign In"
+                        onClick={() => {
+                            setSigningIn(true)
+                            signIn()
+                        }}
+                    />
+                </div>
+            )}
         </div>
-    )
-}
-
-function Spinner() {
-    return (
-        <div
-            style={{
-                marginTop: 24,
-                width: 48,
-                height: 48,
-                border: '4px solid rgba(212,175,55,0.3)',
-                borderTopColor: 'gold',
-                borderRadius: '50%',
-                animation: 'lucy-spin 1s linear infinite',
-            }}
-        />
-    )
-}
-
-function SignInButton() {
-    const [hover, setHover] = useState(false)
-    const [hidden, setHidden] = useState(false)
-    if (hidden) return null
-    return (
-        <button
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            onClick={() => {
-                // Hide immediately, before the Cognito redirect.
-                setHidden(true)
-                void signIn()
-            }}
-            style={{
-                marginTop: 24,
-                background: hover ? 'gold' : 'transparent',
-                border: '1px solid gold',
-                color: hover ? 'black' : 'gold',
-                fontSize: 13,
-                fontFamily: 'sans-serif',
-                padding: '4px 14px',
-                borderRadius: 4,
-                cursor: 'pointer',
-                transition: 'background 0.15s, color 0.15s',
-            }}
-        >
-            Sign In
-        </button>
     )
 }

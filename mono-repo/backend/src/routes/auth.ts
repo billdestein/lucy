@@ -1,45 +1,36 @@
 import { Router } from 'express'
-import * as crypto from 'crypto'
-import * as path from 'path'
+import crypto from 'crypto'
 import { createRemoteJWKSet, jwtVerify } from 'jose'
-import { config, isHttps } from '../config'
-import { redis } from '../services/redis'
+import { config } from '../config'
 import { findOrCreateUser } from '../services/users'
-import { ensureDir, usersDir } from '../services/files'
-import { asyncHandler } from '../middleware/session'
+import { setSession } from '../services/redis'
+import { ensureDir, userRoot } from '../services/files'
+
+const router = Router()
 
 const issuer = `https://cognito-idp.${config.cognitoRegion}.amazonaws.com/${config.cognitoUserPoolId}`
-const JWKS = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`))
-
-const SESSION_TTL_SECONDS = 60 * 60 // one hour
-
-export const authRouter = Router()
+const jwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`))
 
 // POST /v1/auth/login
-// Verifies the Cognito ID token (not the access token) via the JWKS endpoint using jose,
-// extracts the email claim, creates a session in Redis, and sets an http-only cookie.
-authRouter.post(
-    '/login',
-    asyncHandler(async (req, res) => {
-        const header = req.header('authorization') || ''
-        const token = header.startsWith('Bearer ') ? header.slice(7) : header
+// Input: authorization header containing the Cognito ID token (not the access token).
+// Verifies the token via Cognito's JWKS endpoint using jose, extracts the 'email' claim,
+// creates the User + its directory, stores a session in Redis, and returns the session in
+// an http-only cookie.
+router.post('/login', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization || ''
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
         if (!token) {
             res.status(401).json({ error: 'Missing authorization header' })
             return
         }
 
-        let email: string
-        try {
-            const { payload } = await jwtVerify(token, JWKS, {
-                issuer,
-                audience: config.cognitoClientId,
-            })
-            email = payload.email as string
-        } catch (err: any) {
-            res.status(401).json({ error: `Token verification failed: ${err.message}` })
-            return
-        }
+        const { payload } = await jwtVerify(token, jwks, {
+            issuer,
+            audience: config.cognitoClientId,
+        })
 
+        const email = payload.email as string | undefined
         if (!email) {
             res.status(401).json({ error: 'Token has no email claim' })
             return
@@ -48,18 +39,23 @@ authRouter.post(
         const user = findOrCreateUser(email)
 
         const sessionId = crypto.randomBytes(32).toString('hex')
-        await redis.set(sessionId, email, { EX: SESSION_TTL_SECONDS })
+        await setSession(sessionId, email)
+
+        // Create the newly logged-in user's directory if it does not exist.
+        ensureDir(userRoot(user.slug))
 
         res.cookie('sessionId', sessionId, {
             httpOnly: true,
-            secure: isHttps,
             sameSite: 'lax',
-            maxAge: SESSION_TTL_SECONDS * 1000,
+            maxAge: 60 * 60 * 1000,
         })
 
-        // Create the newly logged-in user's directory if it does not exist.
-        await ensureDir(path.join(usersDir(), user.slug))
+        // The session is delivered via Set-Cookie; the body is an empty object.
+        res.json({})
+    } catch (err: any) {
+        console.error('login error:', err)
+        res.status(401).json({ error: err?.message || 'Login failed' })
+    }
+})
 
-        res.status(200).json({})
-    })
-)
+export default router

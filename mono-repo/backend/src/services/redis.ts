@@ -1,20 +1,38 @@
 import { createClient } from 'redis'
-import { config, isLocalRedis } from '../config'
+import { config } from '../config'
 
-// Use the standard redis client library (not ioredis). TLS is required for ElastiCache
-// Serverless but unsupported by local Redis, so it is set conditionally.
-export const redis = createClient({
-    socket: {
-        host: config.redisHost,
-        port: config.redisPort,
-        tls: !isLocalRedis,
-    } as any,
-})
+// ElastiCache Serverless requires TLS, but local Redis does not support it. Enable TLS
+// conditionally based on the host.
+const isLocal = config.redisHost === 'localhost' || config.redisHost === '127.0.0.1'
 
-redis.on('error', (err) => console.error('Redis client error', err))
+const socket: Record<string, unknown> = {
+    host: config.redisHost,
+    port: config.redisPort,
+}
+if (!isLocal) {
+    socket.tls = true
+}
 
-export async function connectRedis(): Promise<void> {
-    if (!redis.isOpen) {
-        await redis.connect()
+const client = createClient({ socket: socket as any })
+client.on('error', err => console.error('Redis client error:', err))
+
+let connecting: Promise<void> | null = null
+async function ensureConnected(): Promise<void> {
+    if (client.isOpen) return
+    if (!connecting) {
+        connecting = client.connect().then(() => undefined)
     }
+    await connecting
+}
+
+const SESSION_TTL_SECONDS = 60 * 60 // one hour
+
+export async function setSession(sessionId: string, email: string): Promise<void> {
+    await ensureConnected()
+    await client.set(`session:${sessionId}`, email, { EX: SESSION_TTL_SECONDS })
+}
+
+export async function getSessionEmail(sessionId: string): Promise<string | null> {
+    await ensureConnected()
+    return client.get(`session:${sessionId}`)
 }

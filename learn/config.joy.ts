@@ -5,7 +5,7 @@ export const config = `
 
 Lucy uses four JSON configuration files. They are never committed to the repo.
 
-On MacOS (local development), all four files live in ~/lucy-config/.
+On MacOS (local development), all four files live in ~/git/billdestein/lucy-config/.
 On Linux (EC2 production), all four files live in /home/ubuntu/lucy-config/.
 
 ## BackendLocalConfig.json / BackendProdConfig.json
@@ -16,6 +16,8 @@ Fields:
 - COGNITO_CLIENT_ID      — The Cognito app client ID (public client, no secret)
 - COGNITO_REGION         — AWS region of the Cognito user pool (e.g. "us-west-2")
 - COGNITO_USER_POOL_ID   — Cognito user pool ID
+- EXPRESS_PORT           — Optional. The port the Express server listens on. When absent or
+                           empty, the backend defaults to port 8080.
 - GOOGLE_API_KEY         — Google API key for Gemini image generation
 - MOUNT_DIR              — Root directory for user data. May begin with ~, which the
                            backend expands explicitly using os.homedir().

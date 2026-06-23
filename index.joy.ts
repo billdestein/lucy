@@ -11,6 +11,7 @@ import { composerButtonComponent } from './learn/composerButtonComponent.joy.ts'
 import { composerButtonRowComponent } from './learn/composerButtonRowComponent.joy.ts'
 import { composerComponent } from './learn/composerComponent.joy.ts'
 import { composerEditorComponent } from './learn/composerEditorComponent.joy.ts'
+import { config } from './learn/config.joy.ts'
 import { demoApplet } from './learn/demoApplet.joy.ts'
 import { frameHeaderButtonComponent } from './learn/frameHeaderButtonComponent.joy.ts'
 import { frontend } from './learn/frontend.joy.ts'
@@ -47,6 +48,8 @@ learn(composerButtonRowComponent)
 learn(composerComponent)
 
 learn(composerEditorComponent)
+
+learn(config)
 
 learn(demoApplet)
 

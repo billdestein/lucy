@@ -1,13 +1,13 @@
 {
   "name": "@billdestein/lucy-common",
   "version": "1.0.0",
-  "description": "Shared TypeScript types and utilities for Lucy",
+  "description": "Shared TypeScript types for Lucy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.5"
   }
 }

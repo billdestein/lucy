@@ -1,36 +1,36 @@
-// Manual Authorization Code + PKCE flow against Cognito. We deliberately avoid
-// react-oidc-context / oidc-client-ts because they store PKCE state in sessionStorage,
-// which Cognito's hosted UI can clear during an intermediate redirect.
+// Manual Authorization Code + PKCE flow against Cognito. We deliberately do NOT use
+// react-oidc-context / oidc-client-ts: they store PKCE state in sessionStorage, which
+// Cognito's hosted UI can clear via an intermediate redirect, producing an unrecoverable
+// "No matching state found in storage" error. We store state in localStorage instead.
 
 const AUTHORITY = import.meta.env.VITE_COGNITO_AUTHORITY
 const CLIENT_ID = import.meta.env.VITE_COGNITO_CLIENT_ID
+// 'openid email' only — do NOT add 'profile' (Cognito disables it by default -> invalid_scope).
 const SCOPE = 'openid email'
 
-// redirect_uri must exactly equal window.location.origin — no path suffix.
-function redirectUri(): string {
-    return window.location.origin
-}
+const KEY_STATE = 'lucy_oidc_state'
+const KEY_VERIFIER = 'lucy_oidc_verifier'
+const KEY_ID_TOKEN = 'lucy_id_token'
 
-type OpenIdConfig = {
+type Discovery = {
     authorization_endpoint: string
     token_endpoint: string
     end_session_endpoint?: string
 }
 
-let discoveryPromise: Promise<OpenIdConfig> | null = null
-function discover(): Promise<OpenIdConfig> {
-    if (!discoveryPromise) {
-        discoveryPromise = fetch(`${AUTHORITY}/.well-known/openid-configuration`).then((r) =>
-            r.json()
-        )
-    }
-    return discoveryPromise
+let discoveryCache: Discovery | null = null
+async function discovery(): Promise<Discovery> {
+    if (discoveryCache) return discoveryCache
+    const res = await fetch(`${AUTHORITY}/.well-known/openid-configuration`)
+    if (!res.ok) throw new Error('Failed to fetch OpenID configuration')
+    discoveryCache = await res.json()
+    return discoveryCache!
 }
 
-function randomString(bytes = 32): string {
-    const arr = new Uint8Array(bytes)
+function randomHex(byteLength: number): string {
+    const arr = new Uint8Array(byteLength)
     crypto.getRandomValues(arr)
-    return base64url(arr.buffer)
+    return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('')
 }
 
 function base64url(buf: ArrayBuffer): string {
@@ -44,102 +44,126 @@ async function sha256(input: string): Promise<ArrayBuffer> {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
 }
 
-export async function signIn(): Promise<void> {
-    const state = randomString(16)
-    const codeVerifier = randomString(32)
-    localStorage.setItem('lucy.oauth.state', state)
-    localStorage.setItem('lucy.oauth.verifier', codeVerifier)
+// redirect_uri must EXACTLY match a registered Cognito callback URL — window.location.origin
+// with no path suffix.
+function redirectUri(): string {
+    return window.location.origin
+}
 
-    const codeChallenge = base64url(await sha256(codeVerifier))
-    const cfg = await discover()
-
+// Shared PKCE redirect: generate + store state/verifier, then redirect to the given hosted-UI
+// endpoint with the standard authorize query parameters.
+async function authorizeRedirect(endpoint: string): Promise<void> {
+    const state = randomHex(16)
+    const verifier = randomHex(48)
+    localStorage.setItem(KEY_STATE, state)
+    localStorage.setItem(KEY_VERIFIER, verifier)
+    const challenge = base64url(await sha256(verifier))
     const params = new URLSearchParams({
         response_type: 'code',
         client_id: CLIENT_ID,
         redirect_uri: redirectUri(),
         scope: SCOPE,
         state,
-        code_challenge: codeChallenge,
+        code_challenge: challenge,
         code_challenge_method: 'S256',
     })
-    window.location.assign(`${cfg.authorization_endpoint}?${params.toString()}`)
+    window.location.href = `${endpoint}?${params.toString()}`
 }
 
-// If the URL contains ?code=...&state=..., exchange the code for tokens and store the
-// id_token. Returns true if a callback was handled.
+export async function signIn(): Promise<void> {
+    const d = await discovery()
+    await authorizeRedirect(d.authorization_endpoint)
+}
+
+export async function signUp(): Promise<void> {
+    const d = await discovery()
+    // Cognito's hosted-UI sign-up page takes the same params as authorize, on the '/signup'
+    // path. After sign-up + confirmation it redirects back with ?code=...&state=..., handled
+    // by the same callback logic as sign-in.
+    const signupUrl = d.authorization_endpoint.replace('/oauth2/authorize', '/signup')
+    await authorizeRedirect(signupUrl)
+}
+
+// Returns true if a callback was handled (and tokens stored).
 export async function handleRedirectCallback(): Promise<boolean> {
     const url = new URL(window.location.href)
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     if (!code || !state) return false
 
-    const expectedState = localStorage.getItem('lucy.oauth.state')
-    const codeVerifier = localStorage.getItem('lucy.oauth.verifier')
-    if (!expectedState || state !== expectedState || !codeVerifier) {
-        throw new Error('OAuth state mismatch')
-    }
+    const savedState = localStorage.getItem(KEY_STATE)
+    const verifier = localStorage.getItem(KEY_VERIFIER)
+    if (state !== savedState || !verifier) throw new Error('OIDC state mismatch')
 
-    const cfg = await discover()
+    const d = await discovery()
     const body = new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: CLIENT_ID,
         code,
         redirect_uri: redirectUri(),
-        code_verifier: codeVerifier,
+        code_verifier: verifier,
     })
-    const res = await fetch(cfg.token_endpoint, {
+    const res = await fetch(d.token_endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
+        body: body.toString(),
     })
-    if (!res.ok) {
-        throw new Error(`Token exchange failed: ${await res.text()}`)
-    }
+    if (!res.ok) throw new Error('Token exchange failed')
     const tokens = await res.json()
-    localStorage.setItem('lucy.id_token', tokens.id_token)
-
-    localStorage.removeItem('lucy.oauth.state')
-    localStorage.removeItem('lucy.oauth.verifier')
-
-    // Clean the URL of the code/state query params.
-    window.history.replaceState({}, document.title, redirectUri())
+    localStorage.setItem(KEY_ID_TOKEN, tokens.id_token)
+    localStorage.removeItem(KEY_STATE)
+    localStorage.removeItem(KEY_VERIFIER)
+    // Clean the ?code=...&state=... off the URL.
+    history.replaceState({}, '', redirectUri())
     return true
+}
+
+export function getIdToken(): string | null {
+    return localStorage.getItem(KEY_ID_TOKEN)
 }
 
 function decodeJwtPayload(token: string): any {
     const part = token.split('.')[1]
-    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'))
-    return JSON.parse(json)
+    return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
 }
 
-export function getIdToken(): string | null {
-    const token = localStorage.getItem('lucy.id_token')
-    if (!token) return null
+export function isAuthenticated(): boolean {
+    const token = getIdToken()
+    if (!token) return false
     try {
-        const payload = decodeJwtPayload(token)
-        if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
-            return null
-        }
-        return token
+        const { exp } = decodeJwtPayload(token)
+        return typeof exp === 'number' && exp * 1000 > Date.now()
     } catch {
-        return null
+        return false
     }
 }
 
+// Establish the backend session by POSTing the ID token (NOT the access token).
+export async function backendLogin(): Promise<void> {
+    const token = getIdToken()
+    if (!token) throw new Error('No ID token')
+    const res = await fetch('/v1/auth/login', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
+    })
+    if (!res.ok) throw new Error('Backend login failed')
+}
+
 export async function signOut(): Promise<void> {
-    localStorage.removeItem('lucy.id_token')
+    localStorage.removeItem(KEY_ID_TOKEN)
     try {
-        const cfg = await discover()
-        if (cfg.end_session_endpoint) {
+        const d = await discovery()
+        if (d.end_session_endpoint) {
             const params = new URLSearchParams({
                 client_id: CLIENT_ID,
                 logout_uri: redirectUri(),
             })
-            window.location.assign(`${cfg.end_session_endpoint}?${params.toString()}`)
+            window.location.href = `${d.end_session_endpoint}?${params.toString()}`
             return
         }
     } catch {
-        // Fall through to a local sign-out.
+        // fall through to a local reload
     }
-    window.location.assign(redirectUri())
+    window.location.href = redirectUri()
 }

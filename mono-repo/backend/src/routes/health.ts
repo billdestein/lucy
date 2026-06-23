@@ -1,8 +1,10 @@
 import { Router } from 'express'
 
-export const healthRouter = Router()
+const router = Router()
 
-// GET /v1/health/check
-healthRouter.get('/check', (_req, res) => {
-    res.sendStatus(200)
+// GET /v1/health/check -> HTTP 200, no body.
+router.get('/check', (_req, res) => {
+    res.status(200).end()
 })
+
+export default router

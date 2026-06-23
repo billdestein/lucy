@@ -5,7 +5,7 @@ export const architecture = `
 
 Lucy is a tool for generating, mutating and combining images.
 
-The code for Lucy will be organized within a mono-repo called @billdestein/joy.  
+The code for Lucy will be organized within a mono-repo called @billdestein/lucy.
 
 The mono-repo will have these sub-repos: 
     - applets

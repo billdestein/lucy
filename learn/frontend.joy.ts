@@ -38,13 +38,24 @@ a flash of unstyled text.
 
 When the page loads, immediately start preloading the WorkbookApplet chunk via a dynamic
 import (result ignored). While the chunk is downloading, show a gold spinning circle
-below "Lucy" (no sign-in button yet). Once the chunk resolves, hide the spinner and show
-a centered "Sign In" button below "Lucy".
+below "Lucy" (no buttons yet). Once the chunk resolves, hide the spinner and show a
+centered row of two buttons below "Lucy": a "Sign Up" button on the left and a "Sign In"
+button on the right (8px gap between them).
 
-The Sign In button style: transparent background, 1px solid gold border, gold text,
+Both buttons share the same style: transparent background, 1px solid gold border, gold text,
 13px font size, sans-serif, 4px/14px padding, border-radius 4, margin-top 24.
 On hover, transition the background to gold and the text color to black (transition 0.15s).
-When clicked, hide the button immediately (before the Cognito redirect).
+When either button is clicked, hide BOTH buttons immediately (before the Cognito redirect).
+
+The "Sign In" button starts the manual Authorization Code + PKCE flow (see below), redirecting
+to the hosted UI authorization_endpoint.
+
+The "Sign Up" button starts the same PKCE flow but redirects to Cognito's hosted-UI sign-up
+page instead of the login page. Derive the sign-up URL from the authorization_endpoint by
+replacing the '/oauth2/authorize' path segment with '/signup'; pass the identical query
+parameters (response_type, client_id, redirect_uri, scope, state, code_challenge,
+code_challenge_method). After the user completes sign-up and confirmation, Cognito redirects
+back with ?code=...&state=..., which is handled by the same callback logic as sign-in.
 
 Once logged in, the frontend has a MainMenuComponent across the top of the browser window.
 The remainder of the vertical space is the canvas.
@@ -108,9 +119,27 @@ BACKEND_URL variable in the frontend source. Two mechanisms resolve these relati
 
 ## start.sh
 
-The frontend has a start.sh script for local development. It reads
-~/lucy-config/FrontendLocalConfig.json (macOS) or /home/ubuntu/lucy-config/FrontendProdConfig.json
-(Linux), exports VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID, then runs npx vite.
+The frontend has a start.sh script for local development. In order, it:
+
+1. Captures SCRIPT_DIR as an absolute path before any cd commands.
+
+2. Builds the common package:
+       cd "$SCRIPT_DIR/../common" && npm install --omit=dev && npm run build
+
+3. Builds the applets package:
+       cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
+
+   Steps 2 and 3 are required because the frontend imports common and applets as local
+   (symlinked) packages whose package.json points at compiled dist/ output. Without dist/,
+   Vite cannot resolve the package entries and the dev server fails to start. (--omit=dev
+   works because both packages keep typescript and the @types packages in dependencies, not
+   devDependencies.)
+
+4. Reads ~/git/billdestein/lucy-config/FrontendLocalConfig.json (macOS) or
+   /home/ubuntu/lucy-config/FrontendProdConfig.json (Linux) and exports
+   VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID.
+
+5. cds back to SCRIPT_DIR and runs npx vite.
 
 As with all start.sh scripts, capture SCRIPT_DIR as an absolute path at the top before
 any cd commands, and cd back to SCRIPT_DIR before starting the server.

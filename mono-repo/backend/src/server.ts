@@ -1,56 +1,39 @@
-import express, { ErrorRequestHandler } from 'express'
+import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
-import * as path from 'path'
+import path from 'path'
 import { config } from './config'
-import { connectRedis } from './services/redis'
-import { ensureDir, usersDir } from './services/files'
+import { usersDir, ensureDir } from './services/files'
 import { sessionMiddleware } from './middleware/session'
-import { authRouter } from './routes/auth'
-import { healthRouter } from './routes/health'
-import { workbooksRouter } from './routes/workbooks'
+import authRoutes from './routes/auth'
+import healthRoutes from './routes/health'
+import workbookRoutes from './routes/workbooks'
 
-const PORT = 8080
+const app = express()
 
-async function main() {
-    // At initialization, create MOUNT_DIR/users if it does not exist.
-    await ensureDir(usersDir())
-    await connectRedis()
+app.use(cors({ origin: config.origin, credentials: true }))
+app.use(cookieParser())
+// 20mb to accommodate base64-encoded image uploads.
+app.use(express.json({ limit: '20mb' }))
 
-    const app = express()
+// Unprotected routes.
+app.use('/v1/auth', authRoutes)
+app.use('/v1/health', healthRoutes)
 
-    app.use(cors({ origin: config.origin, credentials: true }))
-    app.use(cookieParser())
-    // 20mb limit accommodates base64-encoded image uploads.
-    app.use(express.json({ limit: '20mb' }))
+// All workbook routes require a valid session.
+app.use('/v1/workbooks', sessionMiddleware, workbookRoutes)
 
-    // Public endpoints.
-    app.use('/v1/auth', authRouter)
-    app.use('/v1/health', healthRouter)
+// Serve the frontend static bundle in production.
+const distDir = path.join(__dirname, '../../frontend/dist')
+app.use(express.static(distDir))
+// Catch-all for client-side routing: serve index.html for any non-API GET.
+app.get('*', (_req, res) => {
+    res.sendFile(path.join(distDir, 'index.html'))
+})
 
-    // Authenticated endpoints.
-    app.use('/v1/workbooks', sessionMiddleware, workbooksRouter)
+// Ensure MOUNT_DIR/users exists at startup.
+ensureDir(usersDir())
 
-    // Serve the frontend static bundle in production.
-    const distDir = path.join(__dirname, '../../frontend/dist')
-    app.use(express.static(distDir))
-    // Catch-all so client-side routing works on direct URL loads.
-    app.get('*', (_req, res) => {
-        res.sendFile(path.join(distDir, 'index.html'))
-    })
-
-    const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-        console.error('Unhandled error', err)
-        res.status(500).json({ error: err?.message || 'Internal server error' })
-    }
-    app.use(errorHandler)
-
-    app.listen(PORT, () => {
-        console.log(`Lucy backend listening on port ${PORT}`)
-    })
-}
-
-main().catch((err) => {
-    console.error('Failed to start server', err)
-    process.exit(1)
+app.listen(config.expressPort, () => {
+    console.log(`Lucy backend listening on port ${config.expressPort}`)
 })

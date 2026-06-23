@@ -1,51 +1,19 @@
-import { getIdToken } from './auth'
+// Thin wrappers over fetch. All calls use relative /v1 URLs (proxied to Express in dev,
+// same-origin in production) and include cookies for the session.
 
-// All API calls use relative URLs; the cookie carries the session. Credentials are included
-// so the http-only session cookie is sent and stored.
-async function request<T>(path: string, init: RequestInit): Promise<T> {
-    const res = await fetch(path, { credentials: 'include', ...init })
-    if (!res.ok) {
-        let message = res.statusText
-        try {
-            const txt = await res.text()
-            if (txt) {
-                try {
-                    message = JSON.parse(txt).error ?? txt
-                } catch {
-                    message = txt
-                }
-            }
-        } catch {
-            // ignore
-        }
-        throw new Error(message)
-    }
-    const text = await res.text()
-    return (text ? JSON.parse(text) : {}) as T
+export async function apiGet(path: string): Promise<any> {
+    const res = await fetch(path, { credentials: 'include' })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
 }
 
-export function apiGet<T>(path: string): Promise<T> {
-    return request<T>(path, { method: 'GET' })
-}
-
-export function apiPost<T>(path: string, body: unknown): Promise<T> {
-    return request<T>(path, {
+export async function apiPost(path: string, body: unknown): Promise<any> {
+    const res = await fetch(path, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body),
     })
-}
-
-// Establish the backend session from the stored Cognito ID token.
-export async function loginToBackend(): Promise<void> {
-    const token = getIdToken()
-    if (!token) throw new Error('No id token')
-    const res = await fetch('/v1/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { Authorization: `Bearer ${token}` },
-    })
-    if (!res.ok) {
-        throw new Error(`Backend login failed: ${await res.text()}`)
-    }
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
 }

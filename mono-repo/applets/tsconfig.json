@@ -5,13 +5,12 @@
     "moduleResolution": "node",
     "jsx": "react-jsx",
     "declaration": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
     "esModuleInterop": true,
+    "strict": true,
     "skipLibCheck": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "forceConsistentCasingInFileNames": true
+    "outDir": "dist",
+    "rootDir": "src"
   },
   "include": ["src"]
 }

@@ -1,141 +1,138 @@
-import React from 'react'
+import { createElement, ComponentType } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { AppletProps } from './types'
 
-type FrameRecord = {
-    appletId: number
-    frameEl: HTMLDivElement
-    root: Root
-    isModal: boolean
-    clickCatcher: HTMLDivElement | null
-    x: number
-    y: number
-    width: number
-    height: number
-    zIndex: number
-}
+// The canvas is a single position:relative div in the host app. Each frame is mounted into
+// its own plain unpositioned div (frameEl) appended to the canvas — invisible infrastructure
+// that serves only as a ReactDOM.createRoot mount point. This keeps each frame in its own
+// React tree so dragging one frame does not re-render the others.
 
 let canvasEl: HTMLElement | null = null
 let nextAppletId = 1
 let topZIndex = 0
-const frames = new Map<number, FrameRecord>()
 
-// At initialization time, setCanvas is called with the id of the div to use as the canvas.
-// The canvas div is position:relative so absolutely-positioned frames are canvas-relative.
+type AppletRecord = {
+    appletId: number
+    frameEl: HTMLDivElement
+    root: Root
+    isModal: boolean
+    clickCatcher?: HTMLDivElement
+    x: number
+    y: number
+    zIndex: number
+}
+
+const applets = new Map<number, AppletRecord>()
+
+// Props accepted by addApplet; appletId, zIndex, and (when omitted) x/y are computed here.
+export type AddAppletProps = {
+    height?: number
+    isModal?: boolean
+    message?: any
+    width?: number
+    x?: number
+    y?: number
+}
+
 export function setCanvas(id: string): void {
-    canvasEl = document.getElementById(id)
-    if (canvasEl) {
-        canvasEl.style.position = 'relative'
-    }
+    const el = document.getElementById(id)
+    if (!el) throw new Error(`setCanvas: no element found with id "${id}"`)
+    canvasEl = el
 }
 
-export function getCanvas(): HTMLElement | null {
-    return canvasEl
-}
-
-// Returns the next z-index above all current frames (used for restacking on click).
-export function nextTopZIndex(): number {
+// Returns a fresh z-index that is greater than every frame currently on the canvas. The
+// Frame calls this on mouse-down to raise itself to the top of the stack.
+export function nextZIndex(): number {
     topZIndex += 1
     return topZIndex
 }
 
-// addApplet takes an Applet component and a (partial) AppletProps. It generates the
-// appletId and z-index, fills in geometry defaults, and mounts the Applet into its own
-// React root on a plain unpositioned mount point inside the canvas.
 export function addApplet(
-    Component: React.ComponentType<AppletProps>,
-    props: Partial<AppletProps> = {}
+    AppletComponent: ComponentType<AppletProps>,
+    props: AddAppletProps = {},
 ): number {
-    if (!canvasEl) {
-        throw new Error('Canvas not set. Call setCanvas(id) first.')
-    }
+    if (!canvasEl) throw new Error('addApplet: canvas not set — call setCanvas first')
 
     const appletId = nextAppletId++
     const isModal = props.isModal ?? false
-    const width = props.width ?? 800
     const height = props.height ?? 600
+    const width = props.width ?? 800
 
-    // Default x/y to the nearest frame (highest z) plus 50, else a base offset.
-    let x = props.x
-    let y = props.y
-    if (x === undefined || y === undefined) {
-        let nearest: FrameRecord | null = null
-        for (const f of frames.values()) {
-            if (!nearest || f.zIndex > nearest.zIndex) nearest = f
-        }
-        x = x ?? (nearest ? nearest.x + 50 : 60)
-        y = y ?? (nearest ? nearest.y + 50 : 60)
+    // Find the topmost frame currently on the canvas (nearest in z order).
+    let topFrame: AppletRecord | undefined
+    for (const rec of applets.values()) {
+        if (!topFrame || rec.zIndex > topFrame.zIndex) topFrame = rec
     }
 
-    let clickCatcher: HTMLDivElement | null = null
+    let x = props.x ?? (topFrame ? topFrame.x + 50 : 50)
+    let y = props.y ?? (topFrame ? topFrame.y + 50 : 50)
+
+    let clickCatcher: HTMLDivElement | undefined
     let zIndex: number
 
     if (isModal) {
-        // Add a translucent click catcher that blocks all pointer events behind it. Do not
-        // set pointer-events:none — that would let clicks pass through.
+        // Add a translucent click catcher that blocks all pointer events behind the modal.
+        const catcherZ = topZIndex + 1
         clickCatcher = document.createElement('div')
-        const ccZ = nextTopZIndex()
-        Object.assign(clickCatcher.style, {
-            position: 'absolute',
-            left: '0',
-            top: '0',
-            width: '100%',
-            height: '100%',
-            background: 'rgba(128,128,128,0.4)',
-            zIndex: String(ccZ),
-        })
+        clickCatcher.style.position = 'absolute'
+        clickCatcher.style.left = '0'
+        clickCatcher.style.top = '0'
+        clickCatcher.style.width = '100%'
+        clickCatcher.style.height = '100%'
+        clickCatcher.style.background = 'rgba(128, 128, 128, 0.4)'
+        clickCatcher.style.zIndex = String(catcherZ)
+        // Do NOT set pointer-events:none — we want it to block, not pass through.
         canvasEl.appendChild(clickCatcher)
 
-        // The modal frame's z-index is one greater than the click catcher. It is centered
-        // on the canvas; its x and y props are ignored.
-        zIndex = nextTopZIndex()
-        x = Math.max(0, (canvasEl.clientWidth - (width + 10)) / 2)
-        y = Math.max(0, (canvasEl.clientHeight - (height + 42)) / 2)
+        zIndex = catcherZ + 1
+        topZIndex = zIndex
+
+        // The modal frame is centered on the canvas; its x/y props are ignored.
+        x = Math.max(0, Math.floor((canvasEl.clientWidth - width) / 2))
+        y = Math.max(0, Math.floor((canvasEl.clientHeight - height) / 2))
     } else {
-        zIndex = nextTopZIndex()
+        zIndex = nextZIndex()
     }
 
-    // One plain unpositioned div per frame, purely as a ReactDOM mount point. It has no
-    // position/left/top — all positioning lives on the Frame's outer div.
+    // frameEl must have NO position/left/top — it is invisible infrastructure. All
+    // positioning lives on the outer div inside the Frame component. Because frameEl is an
+    // unpositioned child of the position:relative canvas, the Frame's absolutely-positioned
+    // outer div resolves its offsetLeft/offsetTop against the canvas, as required for drag
+    // bounds checking.
     const frameEl = document.createElement('div')
     canvasEl.appendChild(frameEl)
-    const root = createRoot(frameEl)
 
-    const appletProps: AppletProps = {
+    const root = createRoot(frameEl)
+    const fullProps: AppletProps = {
         appletId,
         height,
         isModal,
         message: props.message,
         width,
-        x: x!,
-        y: y!,
+        x,
+        y,
         zIndex,
     }
-    root.render(React.createElement(Component, appletProps))
+    root.render(createElement(AppletComponent, fullProps))
 
-    frames.set(appletId, {
-        appletId,
-        frameEl,
-        root,
-        isModal,
-        clickCatcher,
-        x: x!,
-        y: y!,
-        width,
-        height,
-        zIndex,
-    })
-
+    applets.set(appletId, { appletId, frameEl, root, isModal, clickCatcher, x, y, zIndex })
     return appletId
 }
 
-// removeApplet unmounts the applet, removes its mount point, and (for modal frames) removes
-// the click catcher div.
 export function removeApplet(appletId: number): void {
-    const rec = frames.get(appletId)
+    const rec = applets.get(appletId)
     if (!rec) return
-    rec.root.unmount()
-    rec.frameEl.parentElement?.removeChild(rec.frameEl)
-    rec.clickCatcher?.parentElement?.removeChild(rec.clickCatcher)
-    frames.delete(appletId)
+
+    // Unmount asynchronously to avoid React's "synchronous unmount during render" warning
+    // when removeApplet is called from within an event handler in the applet's own tree.
+    const { root, frameEl, clickCatcher } = rec
+    setTimeout(() => {
+        root.unmount()
+        if (frameEl.parentNode) frameEl.parentNode.removeChild(frameEl)
+        if (clickCatcher && clickCatcher.parentNode) {
+            clickCatcher.parentNode.removeChild(clickCatcher)
+        }
+    }, 0)
+
+    applets.delete(appletId)
 }
