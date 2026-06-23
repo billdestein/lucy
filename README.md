@@ -70,6 +70,6 @@ The biggest open question
 What happens as the system grows? Right now the spec files fit comfortably in a context window and the code is comprehensible in one session. At some point — more applets, more backend routes, more edge cases — the specs will outgrow a single context, and regenerating from them will require careful sequencing. The index.joy.ts master prompt suggests you've thought about this, but it's the natural scaling challenge for the methodology.
 
 Overall: it's a serious experiment in making AI a first-class participant in software design rather than just an implementation tool. Worth continuing.
-xxx
+...
 ✻ Crunched for 3m 11s
 
