@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/lucy-applets'
 import { WorkbookProvider, useWorkbook, makeEmptyPrompt } from '../WorkbookContext'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
@@ -7,9 +7,9 @@ import { PicListComponent } from '../components/PicListComponent'
 import { ViewerComponent } from '../components/ViewerComponent'
 import { ComposerComponent } from '../components/ComposerComponent'
 import { hydrateFromBackend, stripForBackend } from '../workbookProtocol'
-import { WorkbookType } from '@billdestein/joy-common'
+import { WorkbookType } from '@billdestein/lucy-common'
 
-function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+function WorkbookAppletInner({ appletId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
     const { workbook, setWorkbook, setSelectedPicFilename } = useWorkbook()
     const workbookName = (message as { workbookName: string }).workbookName
 
@@ -20,8 +20,12 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
     useEffect(() => {
         async function load() {
             const res = await fetch(`/v1/workbooks/get-workbook?workbookName=${encodeURIComponent(workbookName)}`, { credentials: 'include' })
-            const { workbook: wb } = await res.json() as { workbook: WorkbookType }
-            const prompts = wb.prompts?.length ? wb.prompts : [makeEmptyPrompt()]
+            // get-workbook is the lone endpoint that returns the bare WorkbookType (not wrapped).
+            const wb = await res.json() as WorkbookType
+            // Drop empty prompts, unfocus the rest, then append a single empty focused prompt so
+            // the paginator opens on the placeholder rather than the last run prompt.
+            const nonEmpty = (wb.prompts ?? []).filter(p => p.text.trim() !== '').map(p => ({ ...p, focused: false }))
+            const prompts = [...nonEmpty, makeEmptyPrompt()]
             const normalized: WorkbookType = { ...wb, prompts }
             const hydrated = await hydrateFromBackend(normalized)
             setWorkbook(hydrated)
@@ -33,7 +37,7 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
     async function handleClone() {
         const { PromptApplet } = await import('./PromptApplet')
         addApplet(PromptApplet as any, {
-            height: 180, width: 400, x: 200, y: 200, zIndex: 0, isModal: true,
+            height: 180, width: 400, x: 200, y: 200, isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
                 onOk: async (newWorkbookName: string) => {
@@ -45,7 +49,7 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
                     })
                     window.dispatchEvent(new CustomEvent('lucy:workbooks-changed'))
                     addApplet(WorkbookApplet as any, {
-                        height: 600, width: 900, x: 150, y: 150, zIndex: 0, isModal: false,
+                        height: 600, width: 900, x: 150, y: 150, isModal: false,
                         message: { workbookName: newWorkbookName },
                     })
                 },
@@ -56,7 +60,7 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
     async function handleUpload() {
         const { UploadPicApplet } = await import('./UploadPicApplet')
         addApplet(UploadPicApplet as any, {
-            height: 300, width: 500, x: 150, y: 150, zIndex: 0, isModal: true,
+            height: 300, width: 500, x: 150, y: 150, isModal: true,
             message: {
                 workbookName: workbook.workbookName,
                 onUploaded: async (wb: WorkbookType) => {
@@ -110,12 +114,12 @@ function WorkbookAppletInner({ frameId, height, width, x, y, zIndex, isModal, me
 
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title={workbookName}
             headerButtons={<>
                 <FrameHeaderButtonComponent icon={ButtonIcons.faRegCopy} handler={handleClone} tooltipLabel="Clone Workbook" />
                 <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={handleUpload} tooltipLabel="Upload Image" />
-                <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(frameId)} tooltipLabel="Close" />
+                <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(appletId)} tooltipLabel="Close" />
             </>}
         >
             <div ref={containerRef} style={{ display: 'flex', width: '100%', height: '100%' }}>

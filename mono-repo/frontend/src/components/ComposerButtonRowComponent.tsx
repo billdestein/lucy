@@ -4,8 +4,8 @@ import { ComposerButtonComponent } from './ComposerButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 import { stripForBackend, hydrateFromBackend } from '../workbookProtocol'
 import { preparePrompt } from '../promptProtocol'
-import { addApplet } from '@billdestein/joy-applets'
-import { WorkbookType, PromptType } from '@billdestein/joy-common'
+import { addApplet } from '@billdestein/lucy-applets'
+import { WorkbookType, PromptType } from '@billdestein/lucy-common'
 
 type Props = { editorText: string }
 
@@ -89,7 +89,7 @@ export function ComposerButtonRowComponent({ editorText }: Props) {
         } else {
             const { PromptApplet } = await import('../applets/PromptApplet')
             addApplet(PromptApplet as any, {
-                height: 180, width: 400, x: 200, y: 200, zIndex: 0, isModal: true,
+                height: 180, width: 400, x: 200, y: 200, isModal: true,
                 message: {
                     prompt: 'Enter a filename for the generated image:',
                     onOk: async (filename: string) => { await doGenerate(filename) },

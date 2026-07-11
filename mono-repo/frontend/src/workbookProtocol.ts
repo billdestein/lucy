@@ -1,4 +1,4 @@
-import { WorkbookType, PicType } from '@billdestein/joy-common'
+import { WorkbookType, PicType } from '@billdestein/lucy-common'
 import { refresh } from './cache'
 
 export function stripForBackend(workbook: WorkbookType): WorkbookType {

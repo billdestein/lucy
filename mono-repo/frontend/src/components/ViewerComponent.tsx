@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react'
 import { useWorkbook } from '../WorkbookContext'
-import { addApplet } from '@billdestein/joy-applets'
+import { addApplet } from '@billdestein/lucy-applets'
 
 export function ViewerComponent() {
     const { workbook, isLoading, selectedPicFilename } = useWorkbook()
@@ -38,7 +38,7 @@ export function ViewerComponent() {
         if (!pic) return
         const { ZoomApplet } = await import('../applets/ZoomApplet')
         addApplet(ZoomApplet as any, {
-            height: 600, width: 800, x: 100, y: 100, zIndex: 0, isModal: false,
+            height: 600, width: 800, x: 100, y: 100, isModal: false,
             message: { encodedImage: pic.encodedImage, mimeType: pic.mimeType },
         })
         closeMenu()

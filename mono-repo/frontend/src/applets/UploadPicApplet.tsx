@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from '@billdestein/lucy-applets'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
-import { WorkbookType } from '@billdestein/joy-common'
+import { WorkbookType } from '@billdestein/lucy-common'
 
-export function UploadPicApplet({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+export function UploadPicApplet({ appletId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
     const { workbookName, onUploaded } = message as {
         workbookName: string
         onUploaded: (wb: WorkbookType) => void
@@ -33,7 +33,7 @@ export function UploadPicApplet({ frameId, height, width, x, y, zIndex, isModal,
             if (!res.ok) throw new Error(await res.text())
             const { workbook } = await res.json() as { workbook: WorkbookType }
             onUploaded(workbook)
-            removeApplet(frameId)
+            removeApplet(appletId)
         } catch (err) {
             setError(String(err))
         } finally {
@@ -56,7 +56,7 @@ export function UploadPicApplet({ frameId, height, width, x, y, zIndex, isModal,
             if (!res.ok) throw new Error(await res.text())
             const { workbook } = await res.json() as { workbook: WorkbookType }
             onUploaded(workbook)
-            removeApplet(frameId)
+            removeApplet(appletId)
         } catch (err) {
             setError(String(err))
         } finally {
@@ -81,12 +81,12 @@ export function UploadPicApplet({ frameId, height, width, x, y, zIndex, isModal,
 
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title="Upload Image"
             headerButtons={
                 <FrameHeaderButtonComponent
                     icon={ButtonIcons.x}
-                    handler={() => removeApplet(frameId)}
+                    handler={() => removeApplet(appletId)}
                     tooltipLabel="Close"
                 />
             }

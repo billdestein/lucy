@@ -1,0 +1,32 @@
+/* Global stylesheet for the Lucy frontend. Imported once from main.tsx. */
+
+/* Fill the viewport so the app's height:100% flex layouts have a reference. */
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #000000;
+    font-family: sans-serif;
+}
+
+/* Gold spinning circle shown below "Lucy" while the WorkbookApplet chunk loads. */
+.lucy-gold-spinner {
+    width: 32px;
+    height: 32px;
+    margin-top: 24px;
+    border: 3px solid rgba(255, 215, 0, 0.25);
+    border-top-color: gold;
+    border-radius: 50%;
+    animation: lucy-gold-spin 0.8s linear infinite;
+}
+
+@keyframes lucy-gold-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

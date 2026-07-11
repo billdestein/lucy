@@ -1,8 +1,8 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react'
 import { setCanvas, addApplet } from '@billdestein/lucy-applets'
 import { backendLogin, handleRedirectCallback, isAuthenticated, signIn, signUp } from './auth'
-import { MainMenuComponent } from './MainMenuComponent'
-import { WorkbookListApplet } from './WorkbookListApplet'
+import { MainMenuComponent } from './components/MainMenuComponent'
+import { WorkbookListApplet } from './applets/WorkbookListApplet'
 
 const CANVAS_ID = 'lucy-canvas'
 
@@ -44,11 +44,28 @@ export function App() {
     const [phase, setPhase] = useState<Phase>('loading')
     const [chunkReady, setChunkReady] = useState(false)
     const [signingIn, setSigningIn] = useState(false)
+    const [authError, setAuthError] = useState<string | null>(null)
     const canvasInitialized = useRef(false)
+
+    // Start a Cognito redirect flow. Hide the buttons optimistically (the browser normally
+    // navigates away within a moment), but if the redirect fails — e.g. missing config or an
+    // unreachable discovery endpoint — restore the buttons and show the error instead of
+    // leaving the user stuck on a blank landing page.
+    async function startAuth(begin: () => Promise<void>) {
+        setAuthError(null)
+        setSigningIn(true)
+        try {
+            await begin()
+        } catch (e) {
+            console.error('Auth redirect failed', e)
+            setAuthError(e instanceof Error ? e.message : 'Sign-in failed. Please try again.')
+            setSigningIn(false)
+        }
+    }
 
     useEffect(() => {
         // Preload the WorkbookApplet chunk immediately.
-        import('./WorkbookApplet')
+        import('./applets/WorkbookApplet')
             .then(() => setChunkReady(true))
             .catch(() => setChunkReady(true))
         ;(async () => {
@@ -121,20 +138,22 @@ export function App() {
             {showSpinner && <div className="lucy-gold-spinner" />}
             {showButtons && (
                 <div style={{ display: 'flex', gap: 8, marginTop: 24 }}>
-                    <AuthButton
-                        label="Sign Up"
-                        onClick={() => {
-                            setSigningIn(true)
-                            signUp()
-                        }}
-                    />
-                    <AuthButton
-                        label="Sign In"
-                        onClick={() => {
-                            setSigningIn(true)
-                            signIn()
-                        }}
-                    />
+                    <AuthButton label="Sign Up" onClick={() => startAuth(signUp)} />
+                    <AuthButton label="Sign In" onClick={() => startAuth(signIn)} />
+                </div>
+            )}
+            {authError && (
+                <div
+                    style={{
+                        color: '#ff6b6b',
+                        fontFamily: 'sans-serif',
+                        fontSize: 13,
+                        marginTop: 16,
+                        maxWidth: 360,
+                        textAlign: 'center',
+                    }}
+                >
+                    {authError}
                 </div>
             )}
         </div>

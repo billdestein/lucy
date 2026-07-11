@@ -29,15 +29,27 @@ exports environment variables, and starts the Express server. Here is what it do
 
 4. Select config files based on OS:
    - macOS:  ~/git/billdestein/lucy-config/FrontendLocalConfig.json and ~/git/billdestein/lucy-config/BackendLocalConfig.json
-   - Linux:  /home/ubuntu/lucy-config/FrontendProdConfig.json and /home/ubuntu/lucy-config/BackendProdConfig.json
+   - Linux:  /mount/lucy-config/FrontendProdConfig.json and /mount/lucy-config/BackendProdConfig.json
 
 5. Export Vite environment variables from the frontend config, then install + build the
    frontend. Vite bakes these values into the JS bundle at build time, so they must be set
    before the build runs. start.sh owns the full install — the deploy only pushes source and
    runs start.sh — so install the frontend dependencies (including devDependencies, which Vite
-   needs) before building:
-       export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
-       export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
+   needs) before building. First verify the frontend config file exists
+   (if [[ ! -f "$FRONTEND_CONFIG" ]]) and exit 1 with a clear message if not — otherwise jq
+   prints a cryptic "Could not open file" error and the build proceeds with empty vars. Then
+   read each value with 'jq -r ".KEY // empty"' so a missing or null
+   key becomes an empty string (not the literal "null"), then hard-fail if either is empty —
+   baking a bad Cognito authority into the bundle causes a silent redirect failure on the
+   landing page. Assign first and export on a separate line so 'set -e' catches a failed
+   substitution (an 'export VAR=$(...)' would mask its exit status):
+       VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY // empty' "$FRONTEND_CONFIG")
+       VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID // empty' "$FRONTEND_CONFIG")
+       if [[ -z "$VITE_COGNITO_AUTHORITY" || -z "$VITE_COGNITO_CLIENT_ID" ]]; then
+           echo "ERROR: COGNITO_AUTHORITY and/or COGNITO_CLIENT_ID missing or null in $FRONTEND_CONFIG" >&2
+           exit 1
+       fi
+       export VITE_COGNITO_AUTHORITY VITE_COGNITO_CLIENT_ID
        cd "$SCRIPT_DIR/../frontend" && npm install && npm run build
 
 6. cd back to SCRIPT_DIR and install the backend's own dependencies (ts-node, etc.):
@@ -61,7 +73,7 @@ exports environment variables, and starts the Express server. Here is what it do
 
 The startup checks where it is running.
 If running on MacOS, it reads the file ~/git/billdestein/lucy-config/BackendLocalConfig.json.
-If running on Linux,  it reads the file /home/ubuntu/lucy-config/BackendProdConfig.json.
+If running on Linux,  it reads the file /mount/lucy-config/BackendProdConfig.json.
 
 Both files contains a single json object with these properties:
 
@@ -306,7 +318,7 @@ The start.sh builds the frontend before starting the server. Because Vite bakes 
 variables into the JS bundle at build time, the start.sh must read the frontend config and
 export VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID before running the frontend build.
 The frontend config paths are the same as in frontend/start.sh: ~/git/billdestein/lucy-config/FrontendLocalConfig.json
-on MacOS and /home/ubuntu/lucy-config/FrontendProdConfig.json on Linux.
+on MacOS and /mount/lucy-config/FrontendProdConfig.json on Linux.
 
 After setting the VITE vars, it runs:
 

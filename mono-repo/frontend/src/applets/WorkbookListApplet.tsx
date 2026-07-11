@@ -3,10 +3,10 @@ import { AgGridReact } from 'ag-grid-react'
 import { GridApi, ColDef } from 'ag-grid-community'
 import 'ag-grid-community/styles/ag-grid.css'
 import 'ag-grid-community/styles/ag-theme-alpine.css'
-import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, addApplet, removeApplet } from '@billdestein/lucy-applets'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
-import { WorkbookType } from '@billdestein/joy-common'
+import { WorkbookType } from '@billdestein/lucy-common'
 
 type RowData = {
     name: string
@@ -47,7 +47,7 @@ const COL_DEFS: ColDef<RowData>[] = [
     { field: 'createdAgo', headerName: 'Age', sortable: false, width: 140 },
 ]
 
-export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isModal }: AppletProps) {
+export function WorkbookListApplet({ appletId, height, width, x, y, zIndex, isModal }: AppletProps) {
     const [rowData, setRowData] = useState<RowData[]>([])
     const gridApiRef = useRef<GridApi<RowData> | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -99,7 +99,7 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
     function openWorkbook(wb: WorkbookType) {
         import('./WorkbookApplet').then(({ WorkbookApplet }) => {
             addApplet(WorkbookApplet as any, {
-                height: 600, width: 900, x: 100, y: 100, zIndex: 0, isModal: false,
+                height: 600, width: 900, x: 100, y: 100, isModal: false,
                 message: { workbookName: wb.workbookName },
             })
         })
@@ -113,7 +113,7 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
         closeMenu()
         const { PromptApplet } = await import('./PromptApplet')
         addApplet(PromptApplet as any, {
-            height: 180, width: 400, x: 200, y: 200, zIndex: 0, isModal: true,
+            height: 180, width: 400, x: 200, y: 200, isModal: true,
             message: {
                 prompt: 'Enter a name for the cloned workbook:',
                 onOk: async (newWorkbookName: string) => {
@@ -155,7 +155,7 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
     async function addWorkbook() {
         const { PromptApplet } = await import('./PromptApplet')
         addApplet(PromptApplet as any, {
-            height: 180, width: 400, x: 200, y: 200, zIndex: 0, isModal: true,
+            height: 180, width: 400, x: 200, y: 200, isModal: true,
             message: {
                 prompt: 'Enter a name for your new workbook:',
                 onOk: async (workbookName: string) => {
@@ -174,19 +174,19 @@ export function WorkbookListApplet({ frameId, height, width, x, y, zIndex, isMod
     async function uploadWorkbook() {
         const { UploadWorkbookApplet } = await import('./UploadWorkbookApplet')
         addApplet(UploadWorkbookApplet as any, {
-            height: 300, width: 500, x: 150, y: 150, zIndex: 0, isModal: false,
+            height: 300, width: 500, x: 150, y: 150, isModal: false,
             message: { onComplete: loadWorkbooks },
         })
     }
 
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title="Workbooks"
             headerButtons={<>
                 <FrameHeaderButtonComponent icon={ButtonIcons.plus} handler={addWorkbook} tooltipLabel="New Workbook" />
                 <FrameHeaderButtonComponent icon={ButtonIcons.upload} handler={uploadWorkbook} tooltipLabel="Upload Workbook" />
-                <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(frameId)} tooltipLabel="Close" />
+                <FrameHeaderButtonComponent icon={ButtonIcons.x} handler={() => removeApplet(appletId)} tooltipLabel="Close" />
             </>}
         >
             <div

@@ -1,4 +1,4 @@
-import { WorkbookType, PicType } from '@billdestein/joy-common'
+import { WorkbookType, PicType } from '@billdestein/lucy-common'
 
 export type PreparedPrompt = {
     referencedPics: PicType[]

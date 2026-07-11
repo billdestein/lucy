@@ -1,20 +1,20 @@
 import React from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from '@billdestein/lucy-applets'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 
-export function ZoomApplet({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+export function ZoomApplet({ appletId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
     const { encodedImage, mimeType } = message as { encodedImage: string; mimeType: string }
     const src = `data:${mimeType};base64,${encodedImage}`
 
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title="Zoom"
             headerButtons={
                 <FrameHeaderButtonComponent
                     icon={ButtonIcons.x}
-                    handler={() => removeApplet(frameId)}
+                    handler={() => removeApplet(appletId)}
                     tooltipLabel="Close"
                 />
             }

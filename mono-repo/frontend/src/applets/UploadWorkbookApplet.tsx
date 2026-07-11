@@ -1,18 +1,18 @@
 import React from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from '@billdestein/lucy-applets'
 import { FrameHeaderButtonComponent } from '../components/FrameHeaderButtonComponent'
 import { ButtonIcons } from '../ButtonIcons'
 
 // Stub — full implementation deferred to a later session.
-export function UploadWorkbookApplet({ frameId, height, width, x, y, zIndex, isModal }: AppletProps) {
+export function UploadWorkbookApplet({ appletId, height, width, x, y, zIndex, isModal }: AppletProps) {
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title="Upload Workbook"
             headerButtons={
                 <FrameHeaderButtonComponent
                     icon={ButtonIcons.x}
-                    handler={() => removeApplet(frameId)}
+                    handler={() => removeApplet(appletId)}
                     tooltipLabel="Close"
                 />
             }

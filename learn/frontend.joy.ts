@@ -46,6 +46,11 @@ Both buttons share the same style: transparent background, 1px solid gold border
 13px font size, sans-serif, 4px/14px padding, border-radius 4, margin-top 24.
 On hover, transition the background to gold and the text color to black (transition 0.15s).
 When either button is clicked, hide BOTH buttons immediately (before the Cognito redirect).
+The Cognito flow is async and only navigates away after fetching the discovery document, so
+the redirect can fail (missing/invalid config, unreachable discovery endpoint). If it does,
+do NOT leave the user stuck on a blank landing page: catch the error, log it, restore the
+buttons, and show the error message below them (red, sans-serif, 13px). Never fire the
+redirect as an unawaited promise whose rejection is silently swallowed.
 
 The "Sign In" button starts the manual Authorization Code + PKCE flow (see below), redirecting
 to the hosted UI authorization_endpoint.
@@ -72,6 +77,12 @@ Do NOT use react-oidc-context or oidc-client-ts.  These libraries store PKCE sta
 sessionStorage before the Cognito redirect.  Cognito's hosted UI sometimes performs an
 intermediate redirect that clears sessionStorage, causing an unrecoverable 'No matching state
 found in storage' error on the callback.
+
+Before starting any flow, validate that VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID are
+present. Vite bakes a missing key in as the string 'null' or '' (e.g. 'jq -r' on an absent key
+emits "null"), which would build a broken authority URL like 'null/.well-known/...' and fail
+silently. Treat '', 'null', and 'undefined' as unconfigured and throw an actionable error
+naming the missing variable, rather than attempting the fetch.
 
 Instead, implement the Authorization Code + PKCE flow manually:
 - On sign-in: generate a random state and code_verifier, store both in localStorage, compute
@@ -136,8 +147,17 @@ The frontend has a start.sh script for local development. In order, it:
    devDependencies.)
 
 4. Reads ~/git/billdestein/lucy-config/FrontendLocalConfig.json (macOS) or
-   /home/ubuntu/lucy-config/FrontendProdConfig.json (Linux) and exports
-   VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID.
+   /mount/lucy-config/FrontendProdConfig.json (Linux) and exports
+   VITE_COGNITO_AUTHORITY and VITE_COGNITO_CLIENT_ID. First verify the config file exists
+   (if [[ ! -f "$FRONTEND_CONFIG" ]]) and exit 1 with a clear message if not — otherwise jq
+   prints a cryptic "Could not open file" error and the build proceeds with empty vars. Then
+   read each value with 'jq -r ".KEY // empty"' so a missing or null key becomes an empty
+   string (not the literal
+   "null"), then hard-fail (print an error naming the config file and exit 1) if either is
+   empty. This prevents a bad Cognito authority from being baked into the bundle, which would
+   cause a silent redirect failure on the landing page. Note the '// empty' + separate export:
+   assigning first and exporting on a later line lets 'set -e' catch failures (an
+   'export VAR=$(...)' would mask the substitution's exit status).
 
 5. cds back to SCRIPT_DIR and runs npx vite.
 

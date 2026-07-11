@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { Frame, AppletProps, removeApplet } from '@billdestein/joy-applets'
+import { Frame, AppletProps, removeApplet } from '@billdestein/lucy-applets'
 
 function isValidLinuxFilename(name: string): boolean {
     return name.length > 0 && !name.includes('/') && !name.includes('\0')
 }
 
-export function PromptApplet({ frameId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
+export function PromptApplet({ appletId, height, width, x, y, zIndex, isModal, message }: AppletProps) {
     const { prompt, onOk } = message as { prompt: string; onOk: (value: string) => void }
     const [value, setValue] = useState('')
     const [error, setError] = useState('')
@@ -16,17 +16,18 @@ export function PromptApplet({ frameId, height, width, x, y, zIndex, isModal, me
             return
         }
         onOk(value)
-        removeApplet(frameId)
+        removeApplet(appletId)
     }
 
     function handleCancel() {
-        removeApplet(frameId)
+        removeApplet(appletId)
     }
 
     return (
         <Frame
-            frameId={frameId} height={height} width={width} x={x} y={y}
+            height={height} width={width} x={x} y={y}
             zIndex={zIndex} isModal={isModal} title="Prompt"
+            headerButtons={null}
         >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 16, color: '#ccc', fontFamily: 'sans-serif', fontSize: 13 }}>
                 <div>{prompt}</div>

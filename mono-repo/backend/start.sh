@@ -9,8 +9,8 @@ if [[ "$(uname)" == "Darwin" ]]; then
     FRONTEND_CONFIG="$HOME/git/billdestein/lucy-config/FrontendLocalConfig.json"
     BACKEND_CONFIG="$HOME/git/billdestein/lucy-config/BackendLocalConfig.json"
 else
-    FRONTEND_CONFIG="/home/ubuntu/lucy-config/FrontendProdConfig.json"
-    BACKEND_CONFIG="/home/ubuntu/lucy-config/BackendProdConfig.json"
+    FRONTEND_CONFIG="/mount/lucy-config/FrontendProdConfig.json"
+    BACKEND_CONFIG="/mount/lucy-config/BackendProdConfig.json"
 fi
 
 # 1. Build the common package (ts-node cannot resolve it otherwise).
@@ -22,8 +22,21 @@ cd "$SCRIPT_DIR/../applets" && npm install --omit=dev && npm run build
 # 3. Export Vite environment variables from the frontend config, then install + build the
 #    frontend. Vite bakes these into the JS bundle at build time, so they must be set before
 #    the build runs. The frontend needs devDependencies (Vite), so do a full install.
-export VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY' "$FRONTEND_CONFIG")
-export VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID' "$FRONTEND_CONFIG")
+if [[ ! -f "$FRONTEND_CONFIG" ]]; then
+    echo "ERROR: frontend config not found at $FRONTEND_CONFIG" >&2
+    exit 1
+fi
+
+# Use `// empty` so a missing or null key yields an empty string (not the literal "null"),
+# then hard-fail if either is empty — baking a bad Cognito authority into the bundle produces
+# a silent redirect failure on the landing page.
+VITE_COGNITO_AUTHORITY=$(jq -r '.COGNITO_AUTHORITY // empty' "$FRONTEND_CONFIG")
+VITE_COGNITO_CLIENT_ID=$(jq -r '.COGNITO_CLIENT_ID // empty' "$FRONTEND_CONFIG")
+if [[ -z "$VITE_COGNITO_AUTHORITY" || -z "$VITE_COGNITO_CLIENT_ID" ]]; then
+    echo "ERROR: COGNITO_AUTHORITY and/or COGNITO_CLIENT_ID missing or null in $FRONTEND_CONFIG" >&2
+    exit 1
+fi
+export VITE_COGNITO_AUTHORITY VITE_COGNITO_CLIENT_ID
 cd "$SCRIPT_DIR/../frontend" && npm install && npm run build
 
 # 4. Install the backend's own dependencies (ts-node, etc.).

@@ -1,19 +1,19 @@
 import React from 'react'
-import { addApplet } from '@billdestein/joy-applets'
+import { addApplet } from '@billdestein/lucy-applets'
 import { signOut } from '../auth'
 
 export function MainMenuComponent() {
     async function handleDemo() {
         const { DemoApplet } = await import('../applets/DemoApplet')
         addApplet(DemoApplet as any, {
-            height: 625, width: 1112, x: 50, y: 50, zIndex: 0, isModal: false, message: {},
+            height: 625, width: 1112, x: 50, y: 50, isModal: false, message: {},
         })
     }
 
     async function handleWorkbooks() {
         const { WorkbookListApplet } = await import('../applets/WorkbookListApplet')
         addApplet(WorkbookListApplet as any, {
-            height: 400, width: 700, x: 80, y: 80, zIndex: 0, isModal: false, message: {},
+            height: 400, width: 700, x: 80, y: 80, isModal: false, message: {},
         })
     }
 

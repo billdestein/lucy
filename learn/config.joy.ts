@@ -6,7 +6,7 @@ export const config = `
 Lucy uses four JSON configuration files. They are never committed to the repo.
 
 On MacOS (local development), all four files live in ~/git/billdestein/lucy-config/.
-On Linux (EC2 production), all four files live in /home/ubuntu/lucy-config/.
+On Linux (EC2 production), all four files live in /mount/lucy-config/.
 
 ## BackendLocalConfig.json / BackendProdConfig.json
 

@@ -12,6 +12,22 @@ const KEY_STATE = 'lucy_oidc_state'
 const KEY_VERIFIER = 'lucy_oidc_verifier'
 const KEY_ID_TOKEN = 'lucy_id_token'
 
+// Fail loudly if the build-time Cognito config is missing. A missing config key is commonly
+// baked in as the string 'null' or '' (e.g. `jq -r` on an absent key emits "null"), which
+// would otherwise produce a broken authority URL and a silent redirect failure — the user
+// sees the buttons vanish with no hosted-UI dialog. Reject it up front with an actionable
+// message so the failure surfaces instead of hanging.
+function requireConfig(name: string, value: string | undefined): string {
+    if (!value || value === 'null' || value === 'undefined') {
+        throw new Error(
+            `${name} is not configured (got ${JSON.stringify(value)}). The frontend was built ` +
+            `without a valid Cognito config — rebuild with COGNITO_AUTHORITY and ` +
+            `COGNITO_CLIENT_ID set in the frontend config.`,
+        )
+    }
+    return value
+}
+
 type Discovery = {
     authorization_endpoint: string
     token_endpoint: string
@@ -21,8 +37,13 @@ type Discovery = {
 let discoveryCache: Discovery | null = null
 async function discovery(): Promise<Discovery> {
     if (discoveryCache) return discoveryCache
-    const res = await fetch(`${AUTHORITY}/.well-known/openid-configuration`)
-    if (!res.ok) throw new Error('Failed to fetch OpenID configuration')
+    const authority = requireConfig('VITE_COGNITO_AUTHORITY', AUTHORITY)
+    const res = await fetch(`${authority}/.well-known/openid-configuration`)
+    if (!res.ok) {
+        throw new Error(
+            `Failed to fetch OpenID configuration from ${authority} (HTTP ${res.status}).`,
+        )
+    }
     discoveryCache = await res.json()
     return discoveryCache!
 }
@@ -60,7 +81,7 @@ async function authorizeRedirect(endpoint: string): Promise<void> {
     const challenge = base64url(await sha256(verifier))
     const params = new URLSearchParams({
         response_type: 'code',
-        client_id: CLIENT_ID,
+        client_id: requireConfig('VITE_COGNITO_CLIENT_ID', CLIENT_ID),
         redirect_uri: redirectUri(),
         scope: SCOPE,
         state,
